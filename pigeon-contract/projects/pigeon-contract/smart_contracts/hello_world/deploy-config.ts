@@ -1,20 +1,18 @@
 import { AlgorandClient } from '@algorandfoundation/algokit-utils'
-import { HelloWorldFactory } from '../artifacts/hello_world/HelloWorldClient'
+import { ContractPigeonFactory } from '../artifacts/hello_world/ContractPigeonClient'
 
-// Below is a showcase of various deployment options you can use in TypeScript Client
 export async function deploy() {
-  console.log('=== Deploying HelloWorld ===')
+  console.log('=== Deploying ContractPigeon ===')
 
   const algorand = AlgorandClient.fromEnvironment()
   const deployer = await algorand.account.fromEnvironment('DEPLOYER')
 
-  const factory = algorand.client.getTypedAppFactory(HelloWorldFactory, {
+  const factory = algorand.client.getTypedAppFactory(ContractPigeonFactory, {
     defaultSender: deployer.addr,
   })
 
   const { appClient, result } = await factory.deploy({ onUpdate: 'append', onSchemaBreak: 'append' })
 
-  // If app was just created fund the app account
   if (['create', 'replace'].includes(result.operationPerformed)) {
     await algorand.send.payment({
       amount: (1).algo(),
@@ -23,11 +21,5 @@ export async function deploy() {
     })
   }
 
-  const method = 'hello'  
-  const response = await appClient.send.hello({
-    args: { name: 'world' },
-  })
-  console.log(
-    `Called ${method} on ${appClient.appClient.appName} (${appClient.appClient.appId}) with name = world, received: ${response.return}`,
-  )
+  console.log(`Deployed ${appClient.appClient.appName} (app id: ${appClient.appClient.appId})`)
 }
