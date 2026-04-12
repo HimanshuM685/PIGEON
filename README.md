@@ -21,7 +21,7 @@ Contract source and deploy files:
 - Contract source: `pigeon-contract/projects/pigeon-contract/smart_contracts/hello_world/contract.algo.ts`
 - Deployer: `pigeon-contract/projects/pigeon-contract/smart_contracts/hello_world/deploy-config.ts`
 
-## What ESP32 + SIM800L does
+## What ESP32 + SIM800L does (current)
 
 Firmware file:
 
@@ -35,7 +35,7 @@ Behavior:
 - ESP32 replies back by SMS with the query result.
 - Device is read-only for contract interaction and does not hold admin keys.
 
-Supported SMS commands:
+Current supported SMS commands:
 
 - `APPID <id>` set target smart contract app id
 - `APPID` show current app id
@@ -44,6 +44,27 @@ Supported SMS commands:
 - `EXISTS <phone>` check if user box exists (`u<phone>`)
 - `ADDR <phone>` read user Algorand address
 - `USER <phone>` read user address and `createdAt`
+
+## Target SMS UX (planned)
+
+The intended user experience is natural-language SMS, for example:
+
+- `Send 10Algo to +919123456789`
+- `Send 10Algo to 9123456789`
+- `Get Balance` / `Get Bal` / `Bal`
+- `Fund` (for TestNet faucet)
+- `Get tnx` / `Get Transactions`
+- `Create`
+
+Target processing pipeline:
+
+- User SMS -> SIM800L receiver
+- Intent parse (regex first, AI fallback)
+- Intent routing (`get-addr`, `balance`, `transaction`, `fund`, `create`)
+- Transaction signing flow (password challenge when needed)
+- SMS response back to user
+
+Note: this target flow requires a secure signing component and session handling; current firmware is read-only and does not perform user transaction signing.
 
 ## How they work together
 

@@ -135,6 +135,10 @@ The ESP32 firmware is intentionally read-only for contract interaction.
 - It decodes `UserData` and replies via SMS with address and created timestamp.
 - It does not store admin private keys and does not submit admin mutation calls.
 
+Current firmware behavior is intentionally limited to on-chain reads over SMS commands.
+
+Planned product behavior is broader natural-language SMS intent handling (send funds, balances, transaction history, faucet, wallet creation), but that requires additional components beyond this contract, including secure key custody/signing and conversational session state.
+
 Typical command flow on the device:
 
 - `APPID <id>`
