@@ -2,6 +2,8 @@
 
 Smart contract project for storing onboarded user metadata on Algorand.
 
+This contract is paired with an ESP32 + SIM800L SMS interactor located at `esp32 logic/esp32_sms_algod_testnet.ino` in the workspace root. The device reads this contract on TestNet using Algod RPC and replies via SMS.
+
 ## Overview
 
 `ContractPigeon` is an admin-managed registry that maps a normalized phone number to user onboarding data.
@@ -120,3 +122,23 @@ Notes:
 - Normalize phone numbers off-chain before calling the contract.
 - `encryptedMnemonic` is stored as provided; encryption and key management are off-chain responsibilities.
 - If you call `deleteUser`, the counter is decremented; avoid duplicate delete attempts.
+
+## ESP32 + SIM800L Integration
+
+The ESP32 firmware is intentionally read-only for contract interaction.
+
+- The device accepts SMS commands through SIM800L.
+- It queries Algorand TestNet (`https://testnet-api.4160.nodely.dev`) over WiFi.
+- It reads from this contract using:
+  - global state endpoint for `totalUsers`
+  - box endpoint for user data (`"u" + normalizedPhone`)
+- It decodes `UserData` and replies via SMS with address and created timestamp.
+- It does not store admin private keys and does not submit admin mutation calls.
+
+Typical command flow on the device:
+
+- `APPID <id>`
+- `TOTAL`
+- `EXISTS <phone>`
+- `ADDR <phone>`
+- `USER <phone>`
