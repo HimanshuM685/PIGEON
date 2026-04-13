@@ -8,21 +8,21 @@ gsap.registerPlugin(ScrollTrigger)
 
 const team = [
     {
-        quote: 'Building the bridge between SMS and blockchain. Passionate about decentralized systems and making crypto accessible to everyone.',
+        quote: 'Focused on building intuitive frontend interfaces and ensuring smooth user experiences through continuous testing and refinement.',
         name: 'Koushik Mondal',
-        designation: 'Full Stack Developer',
+        designation: 'Frontend Developer',
         src: '/team/koushik.jpg',
     },
     {
-        quote: 'Designing secure cryptographic protocols and scalable backend systems. Driven by the vision of financial inclusion through technology.',
+        quote: 'Leading system architecture, hardware design, and core development. Responsible for blockchain integration and smart contract engineering.',
         name: 'Himanshu Malik',
-        designation: 'Full Stack Developer',
+        designation: 'System Architect & Blockchain Engineer',
         src: '/team/himanshu.jpg',
     },
     {
-        quote: 'Crafting seamless user experiences and robust backend systems. Passionate about building decentralized solutions that empower everyday users.',
+        quote: 'Driving design, testing, and presentation workflows while contributing to idea generation and strategic brainstorming.',
         name: 'Ratnadwip Sarkar',
-        designation: 'Full Stack Developer',
+        designation: 'Design & Strategy Lead',
         src: '/team/ratnadwip.jpg',
     },
 ]
