@@ -11,7 +11,7 @@ path = ".algokit/generators/create_env_file"
 
 [project]
 type = 'contract'
-name = 'pigeon-contract'
+name = 'Pigeon-Contract'
 artifacts = 'smart_contracts/artifacts'
 
 [project.deploy]

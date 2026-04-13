@@ -84,7 +84,7 @@ export function Hero() {
                         className="font-sans text-[var(--muted-foreground)] text-center text-base md:text-xl lg:text-2xl max-w-3xl mx-auto leading-relaxed mb-6"
                     >
                         PIGEON lets anyone send and receive crypto on Algorand using simple text messages.
-                        Powered by Gemini AI intent parsing and encrypted wallet management.
+                        Powered by NVIDIA NIM AI intent parsing and encrypted wallet management.
                     </p>
 
                     {/* Status indicator */}
@@ -93,7 +93,7 @@ export function Hero() {
                             <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[var(--primary)] opacity-75"></span>
                             <span className="relative inline-flex h-2 w-2 rounded-full bg-[var(--primary)]"></span>
                         </span>
-                        <p className="text-xs text-[var(--primary-light)] font-mono">Built on Algorand and solana</p>
+                        <p className="text-xs text-[var(--primary-light)] font-mono">Built on Algorand</p>
                     </div>
 
                     {/* CTA Buttons */}

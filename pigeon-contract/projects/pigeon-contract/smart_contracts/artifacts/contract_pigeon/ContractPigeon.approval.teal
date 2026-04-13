@@ -7,14 +7,14 @@ main:
     bytecblock "totalUsers" "u" 0x151f7c75 "admin" 0x000c
     txn ApplicationID
     bnz main_after_if_else@2
-    // smart_contracts/hello_world/contract.algo.ts:21
+    // smart_contracts/contract_pigeon/contract.algo.ts:33
     // totalUsers = GlobalState<uint64>({ initialValue: Uint64(0) })
     bytec_0 // "totalUsers"
     intc_0 // 0
     app_global_put
 
 main_after_if_else@2:
-    // smart_contracts/hello_world/contract.algo.ts:19
+    // smart_contracts/contract_pigeon/contract.algo.ts:28
     // export class ContractPigeon extends Contract {
     txn OnCompletion
     !
@@ -27,7 +27,7 @@ main_after_if_else@2:
     err
 
 main_create_NoOp@13:
-    // smart_contracts/hello_world/contract.algo.ts:19
+    // smart_contracts/contract_pigeon/contract.algo.ts:28
     // export class ContractPigeon extends Contract {
     pushbytes 0xb8447b36 // method "createApplication()void"
     txna ApplicationArgs 0
@@ -35,24 +35,24 @@ main_create_NoOp@13:
     err
 
 
-// smart_contracts/hello_world/contract.algo.ts::ContractPigeon.createApplication[routing]() -> void:
+// smart_contracts/contract_pigeon/contract.algo.ts::ContractPigeon.createApplication[routing]() -> void:
 createApplication:
-    // smart_contracts/hello_world/contract.algo.ts:20
+    // smart_contracts/contract_pigeon/contract.algo.ts:30
     // admin = GlobalState<arc4.Address>()
     bytec_3 // "admin"
-    // smart_contracts/hello_world/contract.algo.ts:25
+    // smart_contracts/contract_pigeon/contract.algo.ts:53
     // this.admin.value = new arc4.Address(Txn.sender)
     txn Sender
     app_global_put
-    // smart_contracts/hello_world/contract.algo.ts:24
+    // smart_contracts/contract_pigeon/contract.algo.ts:52
     // createApplication(): void {
     intc_2 // 1
     return
 
 
-// smart_contracts/hello_world/contract.algo.ts::ContractPigeon.onboardUser[routing]() -> void:
+// smart_contracts/contract_pigeon/contract.algo.ts::ContractPigeon.onboardUser[routing]() -> void:
 onboardUser:
-    // smart_contracts/hello_world/contract.algo.ts:28-33
+    // smart_contracts/contract_pigeon/contract.algo.ts:72-77
     // onboardUser(
     //   phone: arc4.Str,
     //   address: arc4.Str,
@@ -97,22 +97,22 @@ onboardUser:
     intc_3 // 8
     ==
     assert // invalid number of bytes for arc4.uint64
-    // smart_contracts/hello_world/contract.algo.ts:34
+    // smart_contracts/contract_pigeon/contract.algo.ts:78
     // this.assertAdmin()
     callsub assertAdmin
-    // smart_contracts/hello_world/contract.algo.ts:22
+    // smart_contracts/contract_pigeon/contract.algo.ts:42
     // users = BoxMap<arc4.Str, UserData>({ keyPrefix: 'u' })
     bytec_1 // "u"
     uncover 5
     concat
-    // smart_contracts/hello_world/contract.algo.ts:35
+    // smart_contracts/contract_pigeon/contract.algo.ts:81
     // assert(!this.users(phone).exists, 'User already onboarded')
     dup
     box_len
     bury 1
     !
     assert // User already onboarded
-    // smart_contracts/hello_world/contract.algo.ts:37-41
+    // smart_contracts/contract_pigeon/contract.algo.ts:83-87
     // this.users(phone).value = new UserData({
     //   address: address,
     //   encryptedMnemonic: encryptedMnemonic,
@@ -136,26 +136,26 @@ onboardUser:
     box_del
     pop
     box_put
-    // smart_contracts/hello_world/contract.algo.ts:43
+    // smart_contracts/contract_pigeon/contract.algo.ts:90
     // this.totalUsers.value = this.totalUsers.value + 1
     intc_0 // 0
-    // smart_contracts/hello_world/contract.algo.ts:21
+    // smart_contracts/contract_pigeon/contract.algo.ts:33
     // totalUsers = GlobalState<uint64>({ initialValue: Uint64(0) })
     bytec_0 // "totalUsers"
-    // smart_contracts/hello_world/contract.algo.ts:43
+    // smart_contracts/contract_pigeon/contract.algo.ts:90
     // this.totalUsers.value = this.totalUsers.value + 1
     app_global_get_ex
     assert // check GlobalState exists
     intc_2 // 1
     +
-    // smart_contracts/hello_world/contract.algo.ts:21
+    // smart_contracts/contract_pigeon/contract.algo.ts:33
     // totalUsers = GlobalState<uint64>({ initialValue: Uint64(0) })
     bytec_0 // "totalUsers"
-    // smart_contracts/hello_world/contract.algo.ts:43
+    // smart_contracts/contract_pigeon/contract.algo.ts:90
     // this.totalUsers.value = this.totalUsers.value + 1
     swap
     app_global_put
-    // smart_contracts/hello_world/contract.algo.ts:28-33
+    // smart_contracts/contract_pigeon/contract.algo.ts:72-77
     // onboardUser(
     //   phone: arc4.Str,
     //   address: arc4.Str,
@@ -166,9 +166,9 @@ onboardUser:
     return
 
 
-// smart_contracts/hello_world/contract.algo.ts::ContractPigeon.updateUser[routing]() -> void:
+// smart_contracts/contract_pigeon/contract.algo.ts::ContractPigeon.updateUser[routing]() -> void:
 updateUser:
-    // smart_contracts/hello_world/contract.algo.ts:46-50
+    // smart_contracts/contract_pigeon/contract.algo.ts:102-106
     // updateUser(
     //   phone: arc4.Str,
     //   address: arc4.Str,
@@ -206,27 +206,27 @@ updateUser:
     len
     ==
     assert // invalid number of bytes for arc4.dynamic_array<arc4.uint8>
-    // smart_contracts/hello_world/contract.algo.ts:51
+    // smart_contracts/contract_pigeon/contract.algo.ts:107
     // this.assertAdmin()
     callsub assertAdmin
-    // smart_contracts/hello_world/contract.algo.ts:22
+    // smart_contracts/contract_pigeon/contract.algo.ts:42
     // users = BoxMap<arc4.Str, UserData>({ keyPrefix: 'u' })
     bytec_1 // "u"
     uncover 4
     concat
-    // smart_contracts/hello_world/contract.algo.ts:52
+    // smart_contracts/contract_pigeon/contract.algo.ts:108
     // assert(this.users(phone).exists, 'User not found')
     dup
     box_len
     bury 1
     assert // User not found
-    // smart_contracts/hello_world/contract.algo.ts:58
+    // smart_contracts/contract_pigeon/contract.algo.ts:115
     // createdAt: existing.createdAt,
     dup
     pushint 4 // 4
     intc_3 // 8
     box_extract
-    // smart_contracts/hello_world/contract.algo.ts:55-59
+    // smart_contracts/contract_pigeon/contract.algo.ts:112-116
     // this.users(phone).value = new UserData({
     //   address: address,
     //   encryptedMnemonic: encryptedMnemonic,
@@ -250,7 +250,7 @@ updateUser:
     box_del
     pop
     box_put
-    // smart_contracts/hello_world/contract.algo.ts:46-50
+    // smart_contracts/contract_pigeon/contract.algo.ts:102-106
     // updateUser(
     //   phone: arc4.Str,
     //   address: arc4.Str,
@@ -260,9 +260,9 @@ updateUser:
     return
 
 
-// smart_contracts/hello_world/contract.algo.ts::ContractPigeon.deleteUser[routing]() -> void:
+// smart_contracts/contract_pigeon/contract.algo.ts::ContractPigeon.deleteUser[routing]() -> void:
 deleteUser:
-    // smart_contracts/hello_world/contract.algo.ts:62
+    // smart_contracts/contract_pigeon/contract.algo.ts:123
     // deleteUser(phone: arc4.Str): void {
     txna ApplicationArgs 1
     dup
@@ -274,52 +274,52 @@ deleteUser:
     len
     ==
     assert // invalid number of bytes for arc4.dynamic_array<arc4.uint8>
-    // smart_contracts/hello_world/contract.algo.ts:63
+    // smart_contracts/contract_pigeon/contract.algo.ts:124
     // this.assertAdmin()
     callsub assertAdmin
-    // smart_contracts/hello_world/contract.algo.ts:22
+    // smart_contracts/contract_pigeon/contract.algo.ts:42
     // users = BoxMap<arc4.Str, UserData>({ keyPrefix: 'u' })
     bytec_1 // "u"
     swap
     concat
-    // smart_contracts/hello_world/contract.algo.ts:64
+    // smart_contracts/contract_pigeon/contract.algo.ts:125
     // assert(this.users(phone).exists, 'User not found')
     dup
     box_len
     bury 1
     assert // User not found
-    // smart_contracts/hello_world/contract.algo.ts:65
+    // smart_contracts/contract_pigeon/contract.algo.ts:126
     // this.users(phone).delete()
     box_del
     pop
-    // smart_contracts/hello_world/contract.algo.ts:67
+    // smart_contracts/contract_pigeon/contract.algo.ts:128
     // this.totalUsers.value = this.totalUsers.value - 1
     intc_0 // 0
-    // smart_contracts/hello_world/contract.algo.ts:21
+    // smart_contracts/contract_pigeon/contract.algo.ts:33
     // totalUsers = GlobalState<uint64>({ initialValue: Uint64(0) })
     bytec_0 // "totalUsers"
-    // smart_contracts/hello_world/contract.algo.ts:67
+    // smart_contracts/contract_pigeon/contract.algo.ts:128
     // this.totalUsers.value = this.totalUsers.value - 1
     app_global_get_ex
     assert // check GlobalState exists
     intc_2 // 1
     -
-    // smart_contracts/hello_world/contract.algo.ts:21
+    // smart_contracts/contract_pigeon/contract.algo.ts:33
     // totalUsers = GlobalState<uint64>({ initialValue: Uint64(0) })
     bytec_0 // "totalUsers"
-    // smart_contracts/hello_world/contract.algo.ts:67
+    // smart_contracts/contract_pigeon/contract.algo.ts:128
     // this.totalUsers.value = this.totalUsers.value - 1
     swap
     app_global_put
-    // smart_contracts/hello_world/contract.algo.ts:62
+    // smart_contracts/contract_pigeon/contract.algo.ts:123
     // deleteUser(phone: arc4.Str): void {
     intc_2 // 1
     return
 
 
-// smart_contracts/hello_world/contract.algo.ts::ContractPigeon.getUser[routing]() -> void:
+// smart_contracts/contract_pigeon/contract.algo.ts::ContractPigeon.getUser[routing]() -> void:
 getUser:
-    // smart_contracts/hello_world/contract.algo.ts:70
+    // smart_contracts/contract_pigeon/contract.algo.ts:139
     // getUser(phone: arc4.Str): UserData {
     txna ApplicationArgs 1
     dup
@@ -331,22 +331,22 @@ getUser:
     len
     ==
     assert // invalid number of bytes for arc4.dynamic_array<arc4.uint8>
-    // smart_contracts/hello_world/contract.algo.ts:22
+    // smart_contracts/contract_pigeon/contract.algo.ts:42
     // users = BoxMap<arc4.Str, UserData>({ keyPrefix: 'u' })
     bytec_1 // "u"
     swap
     concat
-    // smart_contracts/hello_world/contract.algo.ts:71
+    // smart_contracts/contract_pigeon/contract.algo.ts:140
     // assert(this.users(phone).exists, 'User not found')
     dup
     box_len
     bury 1
     assert // User not found
-    // smart_contracts/hello_world/contract.algo.ts:72
+    // smart_contracts/contract_pigeon/contract.algo.ts:141
     // return this.users(phone).value
     box_get
     pop
-    // smart_contracts/hello_world/contract.algo.ts:70
+    // smart_contracts/contract_pigeon/contract.algo.ts:139
     // getUser(phone: arc4.Str): UserData {
     bytec_2 // 0x151f7c75
     swap
@@ -356,9 +356,9 @@ getUser:
     return
 
 
-// smart_contracts/hello_world/contract.algo.ts::ContractPigeon.userExists[routing]() -> void:
+// smart_contracts/contract_pigeon/contract.algo.ts::ContractPigeon.userExists[routing]() -> void:
 userExists:
-    // smart_contracts/hello_world/contract.algo.ts:75
+    // smart_contracts/contract_pigeon/contract.algo.ts:147
     // userExists(phone: arc4.Str): boolean {
     txna ApplicationArgs 1
     dup
@@ -370,16 +370,16 @@ userExists:
     len
     ==
     assert // invalid number of bytes for arc4.dynamic_array<arc4.uint8>
-    // smart_contracts/hello_world/contract.algo.ts:22
+    // smart_contracts/contract_pigeon/contract.algo.ts:42
     // users = BoxMap<arc4.Str, UserData>({ keyPrefix: 'u' })
     bytec_1 // "u"
     swap
     concat
-    // smart_contracts/hello_world/contract.algo.ts:76
+    // smart_contracts/contract_pigeon/contract.algo.ts:148
     // return this.users(phone).exists
     box_len
     bury 1
-    // smart_contracts/hello_world/contract.algo.ts:75
+    // smart_contracts/contract_pigeon/contract.algo.ts:147
     // userExists(phone: arc4.Str): boolean {
     pushbytes 0x00
     intc_0 // 0
@@ -393,9 +393,9 @@ userExists:
     return
 
 
-// smart_contracts/hello_world/contract.algo.ts::ContractPigeon.getUserAddress[routing]() -> void:
+// smart_contracts/contract_pigeon/contract.algo.ts::ContractPigeon.getUserAddress[routing]() -> void:
 getUserAddress:
-    // smart_contracts/hello_world/contract.algo.ts:79
+    // smart_contracts/contract_pigeon/contract.algo.ts:155
     // getUserAddress(phone: arc4.Str): arc4.Str {
     txna ApplicationArgs 1
     dup
@@ -407,18 +407,18 @@ getUserAddress:
     len
     ==
     assert // invalid number of bytes for arc4.dynamic_array<arc4.uint8>
-    // smart_contracts/hello_world/contract.algo.ts:22
+    // smart_contracts/contract_pigeon/contract.algo.ts:42
     // users = BoxMap<arc4.Str, UserData>({ keyPrefix: 'u' })
     bytec_1 // "u"
     swap
     concat
-    // smart_contracts/hello_world/contract.algo.ts:80
+    // smart_contracts/contract_pigeon/contract.algo.ts:156
     // assert(this.users(phone).exists, 'User not found')
     dup
     box_len
     bury 1
     assert // User not found
-    // smart_contracts/hello_world/contract.algo.ts:81
+    // smart_contracts/contract_pigeon/contract.algo.ts:157
     // return this.users(phone).value.address
     box_get
     pop
@@ -429,7 +429,7 @@ getUserAddress:
     intc_1 // 2
     extract_uint16
     substring3
-    // smart_contracts/hello_world/contract.algo.ts:79
+    // smart_contracts/contract_pigeon/contract.algo.ts:155
     // getUserAddress(phone: arc4.Str): arc4.Str {
     bytec_2 // 0x151f7c75
     swap
@@ -439,19 +439,19 @@ getUserAddress:
     return
 
 
-// smart_contracts/hello_world/contract.algo.ts::ContractPigeon.getTotalUsers[routing]() -> void:
+// smart_contracts/contract_pigeon/contract.algo.ts::ContractPigeon.getTotalUsers[routing]() -> void:
 getTotalUsers:
-    // smart_contracts/hello_world/contract.algo.ts:85
+    // smart_contracts/contract_pigeon/contract.algo.ts:164
     // return this.totalUsers.value
     intc_0 // 0
-    // smart_contracts/hello_world/contract.algo.ts:21
+    // smart_contracts/contract_pigeon/contract.algo.ts:33
     // totalUsers = GlobalState<uint64>({ initialValue: Uint64(0) })
     bytec_0 // "totalUsers"
-    // smart_contracts/hello_world/contract.algo.ts:85
+    // smart_contracts/contract_pigeon/contract.algo.ts:164
     // return this.totalUsers.value
     app_global_get_ex
     assert // check GlobalState exists
-    // smart_contracts/hello_world/contract.algo.ts:84
+    // smart_contracts/contract_pigeon/contract.algo.ts:163
     // getTotalUsers(): uint64 {
     itob
     bytec_2 // 0x151f7c75
@@ -462,21 +462,21 @@ getTotalUsers:
     return
 
 
-// smart_contracts/hello_world/contract.algo.ts::ContractPigeon.assertAdmin() -> void:
+// smart_contracts/contract_pigeon/contract.algo.ts::ContractPigeon.assertAdmin() -> void:
 assertAdmin:
-    // smart_contracts/hello_world/contract.algo.ts:90
+    // smart_contracts/contract_pigeon/contract.algo.ts:173
     // Txn.sender === this.admin.value.native,
     txn Sender
     intc_0 // 0
-    // smart_contracts/hello_world/contract.algo.ts:20
+    // smart_contracts/contract_pigeon/contract.algo.ts:30
     // admin = GlobalState<arc4.Address>()
     bytec_3 // "admin"
-    // smart_contracts/hello_world/contract.algo.ts:90
+    // smart_contracts/contract_pigeon/contract.algo.ts:173
     // Txn.sender === this.admin.value.native,
     app_global_get_ex
     assert // check GlobalState exists
     ==
-    // smart_contracts/hello_world/contract.algo.ts:89-92
+    // smart_contracts/contract_pigeon/contract.algo.ts:172-175
     // assert(
     //   Txn.sender === this.admin.value.native,
     //   'Only the admin can perform this action',

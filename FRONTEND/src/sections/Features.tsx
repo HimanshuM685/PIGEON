@@ -32,7 +32,7 @@ const features = [
     {
         title: 'AI Intent Classification',
         icon: Brain,
-        description: 'Gemini AI parses natural language messages to understand user intent.',
+        description: 'NVIDIA NIM AI parses natural language messages to understand user intent.',
     },
     {
         title: 'Encrypted Key Storage',
@@ -52,7 +52,7 @@ const features = [
     {
         title: 'Algorand Network',
         icon: Blocks,
-        description: 'Built on Algorand and solana for instant finality, low-cost transactions, and carbon-negative consensus.',
+        description: 'Built on Algorand for instant finality, low-cost transactions, and carbon-negative consensus.',
     },
 ]
 

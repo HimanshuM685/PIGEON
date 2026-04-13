@@ -1,4 +1,4 @@
-# pigeon-contract
+# Pigeon-Contract
 
 Welcome to your new AlgoKit project!
 

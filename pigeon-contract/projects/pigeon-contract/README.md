@@ -1,148 +1,107 @@
-# PIGEON Contract
+# Pigeon-Contract
 
-Smart contract project for storing onboarded user metadata on Algorand.
+This project has been generated using AlgoKit. See below for default getting started instructions.
 
-This contract is paired with an ESP32 + SIM800L SMS interactor located at `esp32 logic/esp32_sms_algod_testnet.ino` in the workspace root. The device reads this contract on TestNet using Algod RPC and replies via SMS.
+# Setup
 
-## Overview
+### Pre-requisites
 
-`ContractPigeon` is an admin-managed registry that maps a normalized phone number to user onboarding data.
+- [Nodejs 22](https://nodejs.org/en/download) or later
+- [AlgoKit CLI 2.5](https://github.com/algorandfoundation/algokit-cli?tab=readme-ov-file#install) or later
+- [Docker](https://www.docker.com/) (only required for LocalNet)
+- [Puya Compiler 4.4.4](https://pypi.org/project/puyapy/) or later
 
-On-chain storage uses a `BoxMap` with key prefix `u`:
+> For interactive tour over the codebase, download [vsls-contrib.codetour](https://marketplace.visualstudio.com/items?itemName=vsls-contrib.codetour) extension for VS Code, then open the [`.codetour.json`](./.tours/getting-started-with-your-algokit-project.tour) file in code tour extension.
 
-- Key: `phone` (`arc4.Str`, digits-only normalized string)
-- Value: `UserData`
-  - `address` (`arc4.Str`)
-  - `encryptedMnemonic` (`arc4.Str`)
-  - `createdAt` (`arc4.Uint64`)
+### Initial Setup
 
-Global state:
+#### 1. Clone the Repository
+Start by cloning this repository to your local machine.
 
-- `admin`: creator address set during `createApplication()`
-- `totalUsers`: running count of onboarded users
+#### 2. Install Pre-requisites
+Ensure the following pre-requisites are installed and properly configured:
 
-## Contract File
+- **Docker**: Required for running a local Algorand network.
+- **AlgoKit CLI**: Essential for project setup and operations. Verify installation with `algokit --version`, expecting `2.6.0` or later.
 
-- `smart_contracts/hello_world/contract.algo.ts`
+#### 3. Bootstrap Your Local Environment
+Run the following commands within the project folder:
 
-## Data Model Mapping
+- **Setup Project**: Execute `algokit project bootstrap all` to install dependencies and setup npm dependencies.
+- **Configure environment**: Execute `algokit generate env-file -a target_network localnet` to create a `.env.localnet` file with default configuration for `localnet`.
+- **Start LocalNet**: Use `algokit localnet start` to initiate a local Algorand network.
 
-The contract is designed to mirror this backend table shape:
+### Development Workflow
 
-- `phone TEXT PRIMARY KEY` -> box key
-- `address TEXT NOT NULL` -> `UserData.address`
-- `encrypted_mnemonic TEXT NOT NULL` -> `UserData.encryptedMnemonic`
-- `created_at INTEGER NOT NULL` -> `UserData.createdAt`
+#### Terminal
+Directly manage and interact with your project using AlgoKit commands:
 
-## Methods
+1. **Build Contracts**: `algokit project run build` compiles all smart contracts. You can also specify a specific contract by passing the name of the contract folder as an extra argument.
+For example: `algokit project run build -- hello_world` will only build the `hello_world` contract.
+2. **Deploy**: Use `algokit project deploy localnet` to deploy contracts to the local network. You can also specify a specific contract by passing the name of the contract folder as an extra argument.
+For example: `algokit project deploy localnet -- hello_world` will only deploy the `hello_world` contract.
 
-### Lifecycle
+#### VS Code 
+For a seamless experience with breakpoint debugging and other features:
 
-- `createApplication(): void`
-  - Sets `admin` to `Txn.sender` at creation.
+1. **Open Project**: In VS Code, open the repository root.
+2. **Install Extensions**: Follow prompts to install recommended extensions.
+3. **Debugging**:
+   - Use `F5` to start debugging.
 
-### Admin-only mutating methods
+#### JetBrains IDEs
+While primarily optimized for VS Code, JetBrains IDEs are supported:
 
-- `onboardUser(phone, address, encryptedMnemonic, createdAt): void`
-  - Requires sender is admin.
-  - Fails if `phone` already exists.
-  - Creates a new user box.
-  - Increments `totalUsers`.
+1. **Open Project**: In your JetBrains IDE, open the repository root.
+2. **Automatic Setup**: The IDE should configure the Node.js environment.
+3. **Debugging**: Use `Shift+F10` or `Ctrl+R` to start debugging. Note: Windows users may encounter issues with pre-launch tasks due to a known bug. See [JetBrains forums](https://youtrack.jetbrains.com/issue/IDEA-277486/Shell-script-configuration-cannot-run-as-before-launch-task) for workarounds.
 
-- `updateUser(phone, address, encryptedMnemonic): void`
-  - Requires sender is admin.
-  - Fails if `phone` is not found.
-  - Updates address and encrypted mnemonic.
-  - Preserves original `createdAt`.
+## AlgoKit Workspaces and Project Management
+This project supports both standalone and monorepo setups through AlgoKit workspaces. Leverage [`algokit project run`](https://github.com/algorandfoundation/algokit-cli/blob/main/docs/features/project/run.md) commands for efficient monorepo project orchestration and management across multiple projects within a workspace.
 
-- `deleteUser(phone): void`
-  - Requires sender is admin.
-  - Fails if `phone` is not found.
-  - Deletes user box.
-  - Decrements `totalUsers`.
+## AlgoKit Generators
 
-### Read methods
+This template provides a set of [algokit generators](https://github.com/algorandfoundation/algokit-cli/blob/main/docs/features/generate.md) that allow you to further modify the project instantiated from the template to fit your needs, as well as giving you a base to build your own extensions to invoke via the `algokit generate` command.
 
-- `getUser(phone): UserData`
-  - Fails if `phone` is not found.
-  - Returns full user struct.
+### Generate Smart Contract 
 
-- `userExists(phone): boolean`
-  - Returns `true` if user box exists.
+By default the template creates a single `HelloWorld` contract under contract_pigeon folder in the `smart_contracts` directory. To add a new contract:
 
-- `getUserAddress(phone): arc4.Str`
-  - Fails if `phone` is not found.
-  - Returns only wallet address.
+1. From the root of the project (`../`) execute `algokit generate smart-contract`. This will create a new starter smart contract and deployment configuration file under `{your_contract_name}` subfolder in the `smart_contracts` directory.
+2. Each contract potentially has different creation parameters and deployment steps. Hence, you need to define your deployment logic in `deploy-config.ts` file.
+3. Technically, you need to reference your contract deployment logic in the `index.ts` file. However, by default, `index.ts` will auto import all TypeScript deployment files under `smart_contracts` directory. If you want to manually import specific contracts, modify the default code provided by the template in `index.ts` file.
 
-- `getTotalUsers(): uint64`
-  - Returns global counter.
+> Please note, above is just a suggested convention tailored for the base configuration and structure of this template. The default code supplied by the template in the `index.ts` file is tailored for the suggested convention. You are free to modify the structure and naming conventions as you see fit.
 
-## Access Control
+### Generate '.env' files
 
-All write operations call `assertAdmin()`:
+By default the template instance does not contain any env files to deploy to different networks. Using [`algokit project deploy`](https://github.com/algorandfoundation/algokit-cli/blob/main/docs/features/project/deploy.md) against `localnet` | `testnet` | `mainnet` will use default values for `algod` and `indexer` unless overwritten via `.env` or `.env.{target_network}`. 
 
-- Allowed sender: `Txn.sender === admin`
-- Revert message: `Only the admin can perform this action`
+To generate a new `.env` or `.env.{target_network}` file, run `algokit generate env-file`
 
-## Box Storage and MBR
+### Debugging Smart Contracts
 
-Each user record is stored in one Algorand box.
+This project is optimized to work with AlgoKit AVM Debugger extension. To activate it:
 
-- Box name format: `"u" + phone`
-- Approximate minimum balance requirement per box:
-  - `2500 + 400 * (keyLen + valueLen)` microAlgos
+Refer to the commented header in the `index.ts` file in the `smart_contracts` folder.Since you have opted in to include VSCode launch configurations in your project, you can also use the `Debug TEAL via AlgoKit AVM Debugger` launch configuration to interactively select an available trace file and launch the debug session for your smart contract.
 
-When onboarding users, ensure the app account is funded enough to cover additional box MBR.
 
-## Build and Deploy
+For information on using and setting up the `AlgoKit AVM Debugger` VSCode extension refer [here](https://github.com/algorandfoundation/algokit-avm-vscode-debugger). To install the extension from the VSCode Marketplace, use the following link: [AlgoKit AVM Debugger extension](https://marketplace.visualstudio.com/items?itemName=algorandfoundation.algokit-avm-vscode-debugger).
 
-From this folder (`pigeon-contract/projects/pigeon-contract`):
+# Tools
 
-```bash
-npm install
-algokit generate env-file -a target_network localnet
-algokit localnet start
-npm run build
-npm run deploy -- hello_world
-```
+This project makes use of Algorand TypeScript to build Algorand smart contracts. The following tools are in use:
 
-Notes:
+- [Algorand](https://www.algorand.com/) - Layer 1 Blockchain; [Developer portal](https://dev.algorand.co/), [Why Algorand?](https://dev.algorand.co/getting-started/why-algorand/)
+- [AlgoKit](https://github.com/algorandfoundation/algokit-cli) - One-stop shop tool for developers building on the Algorand network; [docs](https://github.com/algorandfoundation/algokit-cli/blob/main/docs/algokit.md), [intro tutorial](https://github.com/algorandfoundation/algokit-cli/blob/main/docs/tutorials/intro.md)
+- [Algorand TypeScript](https://github.com/algorandfoundation/puya-ts/) - A semantically and syntactically compatible, typed TypeScript language that works with standard TypeScript tooling and allows you to express smart contracts (apps) and smart signatures (logic signatures) for deployment on the Algorand Virtual Machine (AVM); [docs](https://github.com/algorandfoundation/puya-ts/), [examples](https://github.com/algorandfoundation/puya-ts/tree/main/examples)
+- [AlgoKit Utils](https://github.com/algorandfoundation/algokit-utils-ts) - A set of core Algorand utilities that make it easier to build solutions on Algorand.
+- [NPM](https://www.npmjs.com/): TypeScript packaging and dependency management.
+- [TypeScript](https://www.typescriptlang.org/): Strongly typed programming language that builds on JavaScript
+- [ts-node-dev](https://github.com/wclr/ts-node-dev): TypeScript development execution environment
 
-- `npm run build` compiles contracts and generates typed clients under `smart_contracts/artifacts`.
-- `npm run deploy -- hello_world` runs the deployer at `smart_contracts/hello_world/deploy-config.ts`.
 
-## Scripts
+It has also been configured to have a productive dev experience out of the box in [VS Code](https://code.visualstudio.com/), see the [.vscode](./.vscode) folder.
 
-- `npm run build` -> compile + typed client generation
-- `npm run deploy` -> deploy contracts via `smart_contracts/index.ts`
-- `npm run check-types` -> TypeScript type-check
 
-## Important Operational Notes
 
-- Normalize phone numbers off-chain before calling the contract.
-- `encryptedMnemonic` is stored as provided; encryption and key management are off-chain responsibilities.
-- If you call `deleteUser`, the counter is decremented; avoid duplicate delete attempts.
-
-## ESP32 + SIM800L Integration
-
-The ESP32 firmware is intentionally read-only for contract interaction.
-
-- The device accepts SMS commands through SIM800L.
-- It queries Algorand TestNet (`https://testnet-api.4160.nodely.dev`) over WiFi.
-- It reads from this contract using:
-  - global state endpoint for `totalUsers`
-  - box endpoint for user data (`"u" + normalizedPhone`)
-- It decodes `UserData` and replies via SMS with address and created timestamp.
-- It does not store admin private keys and does not submit admin mutation calls.
-
-Current firmware behavior is intentionally limited to on-chain reads over SMS commands.
-
-Planned product behavior is broader natural-language SMS intent handling (send funds, balances, transaction history, faucet, wallet creation), but that requires additional components beyond this contract, including secure key custody/signing and conversational session state.
-
-Typical command flow on the device:
-
-- `APPID <id>`
-- `TOTAL`
-- `EXISTS <phone>`
-- `ADDR <phone>`
-- `USER <phone>`

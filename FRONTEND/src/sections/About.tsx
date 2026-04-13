@@ -32,7 +32,7 @@ const cards = [
     {
         icon: Brain,
         title: 'AI-Powered',
-        description: 'Natural language intent parsing via Gemini AI. Just text "send 30 ALGO to 9912345678" and it works.',
+        description: 'Natural language intent parsing via NVIDIA NIM AI. Just text "send 30 ALGO to 9912345678" and it works.',
         color: '#10B981',
         yInput: [0, 1],
         yOutput: [150, 20],

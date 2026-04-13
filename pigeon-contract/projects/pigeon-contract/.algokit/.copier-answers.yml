@@ -3,7 +3,7 @@ _commit: 0.3.7
 _src_path: gh:algorandfoundation/algokit-typescript-template
 author_email: himanshumalik0069@gmail.com
 author_name: Himanshu Malik
-contract_name: hello_world
+contract_name: contract_pigeon
 preset_name: starter
-project_name: pigeon-contract
+project_name: Pigeon-Contract
 

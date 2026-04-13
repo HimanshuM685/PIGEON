@@ -32,7 +32,7 @@ const pipelineNodes = [
     },
     {
         icon: Brain,
-        title: 'Gemini 2.5 Flash',
+        title: 'NVIDIA NIM (Gemma 7B)',
         description: 'AI extracts intent, amount, recipient, and parameters',
         color: '#10B981',
         tag: 'AI ENGINE',
@@ -79,7 +79,7 @@ const techStack = [
     { name: 'TypeScript', color: '#3178C6' },
     { name: 'Algorand', color: '#000000' },
     { name: 'AlgoKit', color: '#6E40C9' },
-    { name: 'Gemini AI', color: '#8B5CF6' },
+    { name: 'NVIDIA NIM', color: '#76B900' },
     { name: 'algosdk', color: '#28A0F0' },
     { name: 'Puya TS', color: '#10B981' },
     { name: 'Express', color: '#FF6600' },
@@ -218,7 +218,7 @@ export function Architecture() {
                         <span className="text-[var(--primary)]">Design</span>
                     </h2>
                     <p className="text-[var(--muted-foreground)] max-w-3xl text-base md:text-lg lg:text-xl leading-relaxed">
-                        A robust pipeline from SMS to blockchain, powered by Gemini AI and encrypted wallet management.
+                        A robust pipeline from SMS to blockchain, powered by NVIDIA NIM AI and encrypted wallet management.
                     </p>
                 </div>
 
