@@ -97,6 +97,8 @@ interface PendingSession {
   action: 'send' | 'onboard' | 'get_pvt_key';
   /** Send params (only for 'send') */
   sendParams?: { amount: string; asset?: string; to: string };
+  /** Optional: imported mnemonic for onboarding */
+  onboardMnemonic?: string;
   createdAt: number;
 }
 
@@ -150,7 +152,7 @@ async function processIncomingSms(from: string, message: string): Promise<SmsPro
 
     // Execute the pending action with the password
     if (pending.action === 'onboard') {
-      return await executeOnboard(from, password);
+      return await executeOnboard(from, password, pending.onboardMnemonic);
     }
     if (pending.action === 'send' && pending.sendParams) {
       return await executeSend(from, password, pending.sendParams);
@@ -228,16 +230,19 @@ async function processIncomingSms(from: string, message: string): Promise<SmsPro
       case 'onboard': {
         // If user included password in the message, execute immediately
         if (intentResult.params.password) {
-          return await executeOnboard(from, intentResult.params.password);
+          return await executeOnboard(from, intentResult.params.password, intentResult.params.mnemonic);
         }
 
         // Step 1: Store pending session and ask for password
         pendingSessions.set(normPhone, {
           action: 'onboard',
+          onboardMnemonic: intentResult.params.mnemonic,
           createdAt: Date.now(),
         });
         return {
-          reply: "Let's create your ALGO wallet!\n\n~~ Choose a password and reply with it.\n!!! Remember it — it cannot be recovered!",
+          reply: intentResult.params.mnemonic
+            ? "Let's import your wallet from mnemonic.\n\n~~ Reply with your password to encrypt and secure it.\n!!! Remember it — it cannot be recovered!"
+            : "Let's create your ALGO wallet!\n\n~~ Choose a password and reply with it.\n!!! Remember it — it cannot be recovered!",
           containedPassword: false,
         };
       }
@@ -268,7 +273,7 @@ async function processIncomingSms(from: string, message: string): Promise<SmsPro
       }
 
       default:
-        return { reply: '?? Could not understand your request. Try:\n• "balance" — check balance\n• "address" — get wallet address\n• "create wallet" — create a new wallet\n• "send [amount] ALGO to [address/phone]" — send crypto\n• "fund me" — get testnet tokens\n• "get pvt key" — export your private key\n• "get txn" — last 5 transactions', containedPassword: false };
+        return { reply: '?? Could not understand your request. Try:\n• "balance" — check balance\n• "address" — get wallet address\n• "create wallet" — create a new wallet\n• "import wallet [mnemonic words]" — import an existing wallet\n• "send [amount] ALGO to [address/phone]" — send crypto\n• "fund me" — get testnet tokens\n• "get pvt key" — export your private key\n• "get txn" — last 5 transactions', containedPassword: false };
     }
   } catch (err) {
     console.error('Intent processing error:', err);
@@ -278,8 +283,12 @@ async function processIncomingSms(from: string, message: string): Promise<SmsPro
 
 // ─── Action executors (step 2) ──────────────────────────────────────────────
 
-async function executeOnboard(from: string, password: string): Promise<SmsProcessResult> {
-  const onboardResult = await onboardUser(from, password);
+async function executeOnboard(
+  from: string,
+  password: string,
+  mnemonic?: string
+): Promise<SmsProcessResult> {
+  const onboardResult = await onboardUser(from, password, mnemonic);
   if (onboardResult.alreadyOnboarded) {
     return { reply: `# You are already onboarded on ALGO!\nAddress: ${onboardResult.address ?? 'N/A'}`, containedPassword: true };
   }
@@ -287,7 +296,9 @@ async function executeOnboard(from: string, password: string): Promise<SmsProces
     return { reply: `!!! Onboard failed: ${onboardResult.error}`, containedPassword: true };
   }
   return {
-    reply: `Welcome! Your ALGO wallet has been created.\nAddress: ${onboardResult.address ?? 'N/A'}`,
+    reply: onboardResult.importedMnemonic
+      ? `Welcome! Your wallet has been imported successfully.\nAddress: ${onboardResult.address ?? 'N/A'}`
+      : `Welcome! Your ALGO wallet has been created.\nAddress: ${onboardResult.address ?? 'N/A'}`,
     containedPassword: true,
   };
 }
@@ -315,7 +326,7 @@ async function executeSend(
 }
 
 async function executeGetPvtKey(from: string, password: string): Promise<SmsProcessResult> {
-  const { decryptMnemonic } = await import('./crypto/mnemonic');
+  const { decryptWalletSecret } = await import('./crypto/walletSecret');
   const { findOnboardedUser } = await import('./onchain');
   const user = await findOnboardedUser(from);
 
@@ -324,9 +335,9 @@ async function executeGetPvtKey(from: string, password: string): Promise<SmsProc
   }
 
   try {
-    const secret = decryptMnemonic(user.encrypted_mnemonic, password);
+    const secret = decryptWalletSecret(user.encrypted_mnemonic, password);
     return {
-      reply: `# Your 25-word recovery phrase:\n\n${secret}\n\n!!!! NEVER share this with anyone! Delete this message immediately after saving it securely.`,
+      reply: `# Your recovery phrase:\n\n${secret.mnemonic}\n\n!!!! NEVER share this with anyone! Delete this message immediately after saving it securely.`,
       containedPassword: true,
     };
   } catch {

@@ -9,12 +9,14 @@ import { getAddress } from "./address";
 import { fundUser } from "./fund";
 import { getTransactions } from "./transactions";
 import { findOnboardedUser } from "./onchain";
-import { decryptMnemonic } from "./crypto/mnemonic";
+import { decryptWalletSecret } from "./crypto/walletSecret";
 import { setupWebhookRoutes } from "./webhook";
+import postQuantumRoutes from "./routes/postQuantumRoutes";
 
 const app = express();
 app.use(cors());
 app.use(express.json());
+app.use("/api/pq-wallet", postQuantumRoutes);
 
 // Setup webhook routes for SMS gateway integration
 setupWebhookRoutes(app);
@@ -26,6 +28,8 @@ interface SmsRequestBody {
   messege?: string;
   /** Required for onboard and send: user password (encrypts wallet on onboard, decrypts to sign on send) */
   password?: string;
+  /** Optional: import an existing wallet by 12/24-word mnemonic during onboarding */
+  mnemonic?: string;
 }
 
 app.post("/api/sms", async (req, res) => {
@@ -78,7 +82,11 @@ app.post("/api/sms", async (req, res) => {
         });
         return;
       }
-      const onboarding = await onboardUser(from, password);
+      const onboarding = await onboardUser(
+        from,
+        password,
+        body.mnemonic ?? intentResult.params.mnemonic
+      );
       payload.onboarding = onboarding;
       if (onboarding.error && !onboarding.alreadyOnboarded) {
         res.status(500).json({ ...payload, ok: false, error: onboarding.error });
@@ -200,8 +208,8 @@ app.post("/api/sms", async (req, res) => {
         return;
       }
       try {
-        const mnemonic = decryptMnemonic(user.encrypted_mnemonic, password);
-        payload.pvtKey = { success: true, mnemonic };
+        const walletSecret = decryptWalletSecret(user.encrypted_mnemonic, password);
+        payload.pvtKey = { success: true, mnemonic: walletSecret.mnemonic };
       } catch {
         res.status(400).json({ ...payload, ok: false, error: "Wrong password" });
         return;

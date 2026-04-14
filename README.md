@@ -1,91 +1,69 @@
 # PIGEON
 
-PIGEON is an Algorand + ESP32/SIM800L SMS system.
+PIGEON is an **SMS-first Algorand wallet system** with:
 
-It has two main parts:
+1. **Backend** (`Backend/`) for intent parsing, onboarding, signing, and SMS/webhook orchestration.
+2. **Smart Contract** (`Pigeon-Contract/`) for on-chain user registry storage (phone → address + encrypted mnemonic).
+3. **Firmware** (`ESP32-Firmware/`) for GSM/SMS gateway flows.
 
-- `ContractPigeon` smart contract on Algorand TestNet
-- ESP32 + SIM800L firmware that receives SMS and reads contract data from chain
+## What changed (latest)
 
-## What the contract does
+The backend now uses a **hybrid post-quantum wallet flow** by default:
 
-The `ContractPigeon` contract stores onboarded users on-chain using Algorand boxes.
+1. **Falcon + mnemonic onboarding by default**
+   - New onboarding no longer uses plain `algosdk.generateAccount()`.
+   - Backend generates (or imports) a BIP39 mnemonic, generates Falcon keys, and derives Algorand address from the mnemonic.
+2. **Mnemonic import support for users**
+   - Users can import existing 12/24-word mnemonics during onboarding.
+3. **Contract compatibility preserved**
+   - Contract schema stays unchanged (`address`, `encrypted_mnemonic`, `created_at`), so deployment compatibility is maintained.
 
-- **Admin-controlled writes**: only the app creator can add, update, or delete users.
-- **Phone-keyed storage**: each record is stored by normalized phone number.
-- **Structured user data**: address, encrypted mnemonic, and onboarding timestamp.
-- **Lightweight reads**: query full user record, existence, address, and total count.
+## Backend API highlights
 
-Contract source and deploy files:
+### SMS API
+- `POST /api/sms`
+  - Supports intents: `onboard`, `send`, `get_balance`, `get_address`, `get_txn`, `fund`, `get_pvt_key`.
+  - `onboard` now accepts optional `mnemonic` for wallet import.
 
-- Contract source: `pigeon-contract/projects/pigeon-contract/smart_contracts/hello_world/contract.algo.ts`
-- Deployer: `pigeon-contract/projects/pigeon-contract/smart_contracts/hello_world/deploy-config.ts`
+### Post-Quantum routes
+- Base path: `POST /api/pq-wallet/*`
+- Endpoints:
+  - `/generate` → generate Falcon + mnemonic wallet material
+  - `/recover` → validate/import mnemonic and produce wallet material
+  - `/sign` → Falcon sign
+  - `/verify` → Falcon verify
+  - `/onboard` → create/import user wallet into backend + on-chain registry
 
-## What ESP32 + SIM800L does (current)
+## Smart contract
 
-Firmware file:
+Contract location:
+- `Pigeon-Contract/projects/Pigeon-Contract/smart_contracts/contract_pigeon/contract.algo.ts`
 
-- `esp32 logic/esp32_sms_algod_testnet.ino`
+Current data model (BoxMap, phone-keyed):
+- `address`
+- `encryptedMnemonic`
+- `createdAt`
 
-Behavior:
+No contract field changes were required for Falcon-by-default onboarding, because Falcon integration is handled in backend logic while on-chain storage remains schema-stable.
 
-- SIM800L receives incoming SMS commands.
-- ESP32 connects to WiFi and calls Algorand TestNet RPC (`testnet-api.4160.nodely.dev`).
-- ESP32 reads contract global state and box data for a selected App ID.
-- ESP32 replies back by SMS with the query result.
-- Device is read-only for contract interaction and does not hold admin keys.
+## Quick start
 
-Current supported SMS commands:
-
-- `APPID <id>` set target smart contract app id
-- `APPID` show current app id
-- `STATUS` check Algod node status
-- `TOTAL` read `totalUsers` global state
-- `EXISTS <phone>` check if user box exists (`u<phone>`)
-- `ADDR <phone>` read user Algorand address
-- `USER <phone>` read user address and `createdAt`
-
-## Target SMS UX (planned)
-
-The intended user experience is natural-language SMS, for example:
-
-- `Send 10Algo to +919123456789`
-- `Send 10Algo to 9123456789`
-- `Get Balance` / `Get Bal` / `Bal`
-- `Fund` (for TestNet faucet)
-- `Get tnx` / `Get Transactions`
-- `Create`
-
-Target processing pipeline:
-
-- User SMS -> SIM800L receiver
-- Intent parse (regex first, AI fallback)
-- Intent routing (`get-addr`, `balance`, `transaction`, `fund`, `create`)
-- Transaction signing flow (password challenge when needed)
-- SMS response back to user
-
-Note: this target flow requires a secure signing component and session handling; current firmware is read-only and does not perform user transaction signing.
-
-## How they work together
-
-- Admin onboarding flow writes users into `ContractPigeon`.
-- SIM800L users send SMS queries to the ESP32 device.
-- ESP32 reads the same on-chain contract data and returns results by SMS.
-
-## Contract quick start
-
-From `pigeon-contract/projects/pigeon-contract`:
-
+### Backend
 ```bash
+cd Backend
 npm install
-algokit generate env-file -a target_network localnet
-algokit localnet start
-npm run build
-npm run deploy -- hello_world
+npm run dev
 ```
 
-## Documentation
+### Contract project
+```bash
+cd Pigeon-Contract/projects/Pigeon-Contract
+npm install
+npm run build
+```
 
-Detailed contract API and data-model documentation:
+## Additional docs
 
-- `pigeon-contract/projects/pigeon-contract/README.md`
+- Root architecture: `DOCUMENTATION.md`
+- Backend PQ details: `Backend/POST_QUANTUM_WALLET.md`
+- Contract details: `Pigeon-Contract/projects/Pigeon-Contract/README.md`

@@ -1,18 +1,27 @@
 import * as algosdk from "algosdk";
 import { findOnboardedUser, insertOnboardedUser } from "./onchain";
+import { PostQuantumWallet } from "./crypto/postQuantumWallet";
 import { encryptMnemonic } from "./crypto/mnemonic";
+import { bytesToHex } from "./crypto/walletSecret";
 
 export interface OnboardResult {
   alreadyOnboarded: boolean;
   address?: string;
+  falconPublicKey?: string;
+  importedMnemonic?: boolean;
   error?: string;
 }
 
 /**
- * Onboard a user: create Algorand account (no KMD), encrypt mnemonic with user password, store on-chain.
+ * Onboard a user: create/import mnemonic, generate Falcon keys, derive Algorand address from mnemonic,
+ * encrypt wallet secret with user password, store on-chain.
  * Password is required and is never stored; it is only used to encrypt the mnemonic.
  */
-export async function onboardUser(phone: string, password: string): Promise<OnboardResult> {
+export async function onboardUser(
+  phone: string,
+  password: string,
+  importedMnemonic?: string
+): Promise<OnboardResult> {
   console.log("onboardUser called with phone: ", phone);
   if (!phone || typeof phone !== "string" || !phone.trim()) {
     return { alreadyOnboarded: false, error: "Phone number (from) is required for onboarding" };
@@ -36,14 +45,20 @@ export async function onboardUser(phone: string, password: string): Promise<Onbo
   }
 
   try {
-    const { addr, sk } = algosdk.generateAccount();
-    const addressStr = typeof addr === "string" ? addr : String(addr);
-    const mnemonic = algosdk.secretKeyToMnemonic(sk);
-    const encrypted = encryptMnemonic(mnemonic, password);
+    const trimmedImportedMnemonic = importedMnemonic?.trim();
+    const wallet = trimmedImportedMnemonic
+      ? await PostQuantumWallet.createWalletFromMnemonic(trimmedImportedMnemonic)
+      : await PostQuantumWallet.generateWallet(256);
+    const account = algosdk.mnemonicToSecretKey(wallet.mnemonic);
+    const addressStr = typeof account.addr === "string" ? account.addr : String(account.addr);
+    const falconPublicKey = bytesToHex(wallet.falconKeypair.publicKey);
+    const encrypted = encryptMnemonic(wallet.mnemonic, password);
     await insertOnboardedUser(phone, addressStr, encrypted);
     return {
       alreadyOnboarded: false,
       address: addressStr,
+      falconPublicKey,
+      importedMnemonic: Boolean(trimmedImportedMnemonic),
     };
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);

@@ -8,6 +8,7 @@ export interface IntentParams {
   to?: string;
   txnId?: string;
   password?: string;
+  mnemonic?: string;
 }
 
 export interface IntentResult {
@@ -30,7 +31,7 @@ Given a user message, return a JSON object with:
   - "unknown": unclear or unrelated
 - "params": object with extracted fields when relevant:
   - for "send": amount (string number), asset (e.g. "ALGO"), to (recipient address/phone), password (user's wallet password)
-  - for "onboard": password (the password the user wants to use)
+  - for "onboard": password (the password the user wants to use), mnemonic (optional 12/24 words if user wants to import existing wallet)
   - for "get_balance": asset ("ALGO") if specified
   - for "get_txn": txnId if user asked about a specific transaction
   - omit fields that are not present in the message
@@ -39,6 +40,7 @@ IMPORTANT: The "password" field is critical for "send" and "onboard" intents. Ex
 
 Reply with ONLY valid JSON, no markdown or extra text. Examples:
 {"intent":"onboard","params":{"password":"mypass123"}}
+{"intent":"onboard","params":{"password":"mypass123","mnemonic":"abandon ... zoo"}}
 {"intent":"send","params":{"amount":"5","asset":"ALGO","to":"9912345678","password":"mypass123"}}
 {"intent":"fund","params":{}}
 {"intent":"get_pvt_key","params":{}}`;
@@ -58,6 +60,7 @@ function parseParams(obj: unknown): IntentParams {
     to: typeof o.to === "string" ? o.to : undefined,
     txnId: typeof o.txnId === "string" ? o.txnId : undefined,
     password: typeof o.password === "string" ? o.password : undefined,
+    mnemonic: typeof o.mnemonic === "string" ? o.mnemonic : undefined,
   };
 }
 

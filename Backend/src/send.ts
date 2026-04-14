@@ -1,6 +1,6 @@
 import * as algosdk from "algosdk";
 import { findOnboardedUser } from "./onchain";
-import { decryptMnemonic } from "./crypto/mnemonic";
+import { decryptWalletSecret } from "./crypto/walletSecret";
 
 const ALGOD_TOKEN = process.env.ALGOD_TOKEN ?? "";
 const ALGOD_SERVER = process.env.ALGOD_SERVER ?? "https://testnet-api.algonode.cloud";
@@ -69,8 +69,8 @@ export async function sendAlgo(
 
   let sk: Uint8Array;
   try {
-    const mnemonic = decryptMnemonic(user.encrypted_mnemonic, password);
-    const account = algosdk.mnemonicToSecretKey(mnemonic);
+    const walletSecret = decryptWalletSecret(user.encrypted_mnemonic, password);
+    const account = algosdk.mnemonicToSecretKey(walletSecret.mnemonic);
     sk = account.sk;
     if (account.addr.toString() !== user.address) {
       return { success: false, error: "Wallet address mismatch" };
