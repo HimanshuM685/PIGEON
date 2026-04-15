@@ -17,7 +17,7 @@ const steps = [
         icon: Brain,
         number: '02',
         title: 'AI Parses Intent',
-        description: 'NVIDIA NIM AI extracts: intent=send, amount=30, asset=ALGO, to=9912345678',
+        description: 'Intent parser extracts: intent=send, amount=30, asset=ALGO, to=9912345678',
         color: '#8B5CF6',
     },
     {

@@ -80,9 +80,14 @@ export default defineConfig([
 Required table for the waitlist flow:
 
 ```sql
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
+
 CREATE TABLE IF NOT EXISTS waitlist (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   email text UNIQUE NOT NULL,
   created_at timestamptz NOT NULL DEFAULT now()
 );
+
+-- If your search_path is custom, keep using explicit schema in queries.
+-- This app reads/writes from public.waitlist.
 ```

@@ -8,6 +8,21 @@ if (!neonDatabaseUrl) {
 
 const sql = neon(neonDatabaseUrl)
 
+function toDatabaseError(error: unknown): Error {
+    if (error instanceof Error) {
+        const pgCode = (error as Error & { code?: string }).code
+        const message = error.message.toLowerCase()
+
+        if (pgCode === '42P01' || message.includes('relation "waitlist" does not exist')) {
+            return new Error('Database table public.waitlist does not exist. Create it first, then retry.')
+        }
+    }
+
+    return error instanceof Error
+        ? error
+        : new Error('Database request failed. Please try again.')
+}
+
 export type WaitlistEntry = {
     id: string
     email: string
@@ -15,21 +30,29 @@ export type WaitlistEntry = {
 }
 
 export async function getWaitlistCount() {
-    const rows = await sql`
-        SELECT COUNT(*)::int AS count
-        FROM waitlist
-    ` as Array<{ count: number }>
+    try {
+        const rows = await sql`
+            SELECT COUNT(*)::int AS count
+            FROM public.waitlist
+        ` as Array<{ count: number }>
 
-    return rows[0]?.count ?? 0
+        return rows[0]?.count ?? 0
+    } catch (error) {
+        throw toDatabaseError(error)
+    }
 }
 
 export async function insertWaitlistEmail(email: string) {
-    const rows = await sql`
-        INSERT INTO waitlist (email)
-        VALUES (${email})
-        ON CONFLICT (email) DO NOTHING
-        RETURNING id, email, created_at
-    ` as WaitlistEntry[]
+    try {
+        const rows = await sql`
+            INSERT INTO public.waitlist (email)
+            VALUES (${email})
+            ON CONFLICT (email) DO NOTHING
+            RETURNING id, email, created_at
+        ` as WaitlistEntry[]
 
-    return rows.length > 0 ? 'inserted' : 'duplicate'
+        return rows.length > 0 ? 'inserted' : 'duplicate'
+    } catch (error) {
+        throw toDatabaseError(error)
+    }
 }

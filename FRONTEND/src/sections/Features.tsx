@@ -9,6 +9,7 @@ import {
     PenTool,
     Smartphone,
     Blocks,
+    Shield,
 } from 'lucide-react'
 import { motion, useReducedMotion } from 'motion/react'
 import { FeatureCard } from '@/components/ui/grid-feature-cards'
@@ -18,6 +19,11 @@ const features = [
         title: 'Send Crypto via SMS',
         icon: Send,
         description: 'Transfer ALGO and ASAs with a simple text message. No internet required.',
+    },
+    {
+        title: 'Falcon Post-Quantum',
+        icon: Shield,
+        description: 'Quantum-resistant cryptography protecting your wallet with Falcon signatures.',
     },
     {
         title: 'Check Balance',
@@ -32,7 +38,7 @@ const features = [
     {
         title: 'AI Intent Classification',
         icon: Brain,
-        description: 'NVIDIA NIM AI parses natural language messages to understand user intent.',
+        description: 'Intent parser parses natural language messages to understand user intent.',
     },
     {
         title: 'Encrypted Key Storage',
