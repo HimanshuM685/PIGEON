@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
-import { supabase } from '@/lib/supabase'
+import { getWaitlistCount, insertWaitlistEmail } from '@/lib/neon'
 import { Mail, CheckCircle2, AlertCircle, Loader2, Send, Users } from 'lucide-react'
 
 gsap.registerPlugin(ScrollTrigger)
@@ -23,11 +23,12 @@ export function Waitlist() {
 
     // Fetch waitlist count for social proof
     useEffect(() => {
-        supabase
-            .from('waitlist')
-            .select('*', { count: 'exact', head: true })
-            .then(({ count }) => {
-                if (count !== null) setCount(count)
+        getWaitlistCount()
+            .then((waitlistCount) => {
+                setCount(waitlistCount)
+            })
+            .catch(() => {
+                setCount(null)
             })
     }, [])
 
@@ -79,26 +80,22 @@ export function Waitlist() {
         setErrorMsg('')
 
         try {
-            const { error } = await supabase
-                .from('waitlist')
-                .insert([{ email: email.trim().toLowerCase() }])
+            const result = await insertWaitlistEmail(email.trim().toLowerCase())
 
-            if (error) {
-                // Postgres unique violation code
-                if (error.code === '23505' || error.message?.toLowerCase().includes('duplicate') || error.message?.toLowerCase().includes('unique')) {
-                    setState('duplicate')
-                } else {
-                    setErrorMsg(error.message || 'Something went wrong. Please try again.')
-                    setState('error')
-                }
+            if (result === 'duplicate') {
+                setState('duplicate')
             } else {
                 setState('success')
                 setEmail('')
                 // Increment local count for optimistic UX
                 setCount(prev => (prev !== null ? prev + 1 : 1))
             }
-        } catch {
-            setErrorMsg('Network error. Please check your connection and try again.')
+        } catch (error) {
+            const message = error instanceof Error
+                ? error.message
+                : 'Network error. Please check your connection and try again.'
+
+            setErrorMsg(message)
             setState('error')
         }
     }

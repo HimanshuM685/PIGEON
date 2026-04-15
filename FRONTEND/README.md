@@ -71,3 +71,18 @@ export default defineConfig([
   },
 ])
 ```
+
+## Environment Setup (Neon)
+
+1. Copy `.env.example` to `.env.local`.
+2. Set `VITE_NEON_DATABASE_URL` to your Neon Postgres connection string.
+
+Required table for the waitlist flow:
+
+```sql
+CREATE TABLE IF NOT EXISTS waitlist (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  email text UNIQUE NOT NULL,
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+```
