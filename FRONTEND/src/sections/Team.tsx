@@ -131,7 +131,7 @@ export function Team() {
                 {/* Project Link */}
                 <div className="text-center mt-10">
                     <a
-                        href="https://github.com/Koushikmondal06/PIGEON"
+                        href="https://github.com/HimanshuM685/PIGEON"
                         target="_blank"
                         rel="noopener noreferrer"
                         className="inline-flex items-center gap-2 px-7 py-3.5 rounded-full border border-[var(--border)] spotlight-card text-sm font-medium hover:border-[var(--primary)] hover:text-[var(--primary)] transition-all duration-300"
