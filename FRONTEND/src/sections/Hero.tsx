@@ -106,7 +106,7 @@ export function Hero() {
                             Explore PIGEON
                         </LiquidButton>
                         <a
-                            href="https://github.com/Koushikmondal06/PIGEON"
+                            href="https://github.com/HimanshuM685/PIGEON"
                             target="_blank"
                             rel="noopener noreferrer"
                             className="px-8 py-3 rounded-full text-sm font-medium border border-[var(--border)] text-[var(--muted-foreground)] hover:border-[var(--primary)] hover:text-white transition-all duration-300"
