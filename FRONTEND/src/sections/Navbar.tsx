@@ -62,7 +62,7 @@ export function Navbar() {
                         </a>
                     ))}
                     <a
-                        href="https://github.com/Koushikmondal06/PIGEON"
+                        href="https://github.com/HimanshuM685/PIGEON"
                         target="_blank"
                         rel="noopener noreferrer"
                         className="px-4 py-2 rounded-full text-sm font-medium border border-[var(--border)] hover:border-[var(--primary)] hover:text-[var(--primary)] transition-all duration-300"
