@@ -29,7 +29,7 @@ const team = [
 
 const githubLinks: Record<string, string> = {
     'Koushik Mondal': 'https://github.com/Koushikmondal06',
-    'Himanshu Malik': 'https://github.com/himanshumalik552',
+    'Himanshu Malik': 'https://github.com/HimanshuM685',
     'Ratnadwip Sarkar': 'https://github.com/RealRatnadwip',
 }
 
