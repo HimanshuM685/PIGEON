@@ -7,6 +7,7 @@ import { Features } from '@/sections/Features'
 import { HowItWorks } from '@/sections/HowItWorks'
 import { Architecture } from '@/sections/Architecture'
 import { Team } from '@/sections/Team'
+import { Waitlist } from '@/sections/Waitlist'
 import { Footer } from '@/sections/Footer'
 
 function App() {
@@ -41,6 +42,7 @@ function App() {
           <HowItWorks />
           <Architecture />
           <Team />
+          <Waitlist />
         </main>
 
         {/* Footer — isolated from blend mode */}
