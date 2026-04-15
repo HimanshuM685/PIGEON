@@ -55,7 +55,7 @@ export function Footer() {
                             </li>
                             <li>
                                 <a
-                                    href="https://github.com/Koushikmondal06/PIGEON"
+                                    href="https://github.com/HimanshuM685/PIGEON"
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     className="text-[13px] text-gray-400/80 hover:text-white transition-colors inline-flex items-center gap-1"
@@ -72,7 +72,7 @@ export function Footer() {
                         <ul className="space-y-4">
                             <li>
                                 <a
-                                    href="https://github.com/Koushikmondal06/PIGEON"
+                                    href="https://github.com/HimanshuM685/PIGEON"
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     className="text-[13px] text-gray-400/80 hover:text-white transition-colors inline-flex items-center gap-1.5"
