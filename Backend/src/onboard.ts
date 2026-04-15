@@ -1,8 +1,10 @@
-import * as algosdk from "algosdk";
 import { findOnboardedUser, insertOnboardedUser } from "./onchain";
 import { PostQuantumWallet } from "./crypto/postQuantumWallet";
 import { bytesToHex } from "./crypto/walletSecret";
 import { encryptMnemonic } from "./crypto/mnemonic";
+import { createHash } from "crypto";
+import { ed25519 } from "@noble/curves/ed25519";
+import * as algosdk from "algosdk";
 
 export interface OnboardResult {
   alreadyOnboarded: boolean;
@@ -14,16 +16,15 @@ export interface OnboardResult {
 
 /**
  * Onboard a user:
- * - default path: generate standard Algorand account + BIP39 mnemonic (wallet usability/recovery)
- * - always generate Falcon keypair for post-quantum authentication/signing
- * - import path: accept existing Algorand mnemonic
+ * - generate Falcon keypair + BIP39 mnemonic
+ * - derive a compact pq: address fingerprint from Falcon public key
  * Wallet secret is encrypted with user password and stored on-chain.
  * Password is required and is never stored; it is only used to encrypt the mnemonic.
  */
 export async function onboardUser(
   phone: string,
   password: string,
-  importedMnemonic?: string
+  _importedMnemonic?: string
 ): Promise<OnboardResult> {
   console.log("onboardUser called with phone: ", phone);
   if (!phone || typeof phone !== "string" || !phone.trim()) {
@@ -48,18 +49,24 @@ export async function onboardUser(
   }
 
   try {
-    const trimmedImportedMnemonic = importedMnemonic?.trim();
-    const account = trimmedImportedMnemonic
-      ? algosdk.mnemonicToSecretKey(trimmedImportedMnemonic)
-      : algosdk.generateAccount();
-
-    const mnemonic = trimmedImportedMnemonic
-      ? trimmedImportedMnemonic
-      : algosdk.secretKeyToMnemonic(account.sk);
-
     const falconKeypair = await PostQuantumWallet.generateFalconKeypair();
+
+    const algorandSeed = createHash("sha512")
+      .update(Buffer.from(falconKeypair.secretKey))
+      .update(Buffer.from(falconKeypair.publicKey))
+      .digest()
+      .subarray(0, 32);
+
+    const algorandPublicKey = ed25519.getPublicKey(algorandSeed);
+    const algorandSecretKey = Buffer.concat([
+      Buffer.from(algorandSeed),
+      Buffer.from(algorandPublicKey),
+    ]);
+
+    const addressStr = algosdk.encodeAddress(algorandPublicKey);
+    const mnemonic = algosdk.secretKeyToMnemonic(new Uint8Array(algorandSecretKey));
+
     const falconPublicKey = bytesToHex(falconKeypair.publicKey);
-    const addressStr = typeof account.addr === "string" ? account.addr : String(account.addr);
 
     const encrypted = encryptMnemonic(mnemonic, password);
 
@@ -68,7 +75,7 @@ export async function onboardUser(
       alreadyOnboarded: false,
       address: addressStr,
       falconPublicKey,
-      importedMnemonic: Boolean(trimmedImportedMnemonic),
+      importedMnemonic: false,
     };
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);

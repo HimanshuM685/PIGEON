@@ -341,7 +341,7 @@ async function executeOnboard(
   return {
     reply: onboardResult.importedMnemonic
       ? `Welcome! Your wallet has been imported successfully.\nAddress: ${onboardResult.address ?? 'N/A'}`
-      : `Welcome! Your ALGO wallet (BIP39) is created and Falcon auth is enabled.\nAddress: ${onboardResult.address ?? 'N/A'}`,
+      : `Welcome! Your Falcon wallet is created.\nAddress: ${onboardResult.address ?? 'N/A'}`,
     containedPassword: true,
   };
 }

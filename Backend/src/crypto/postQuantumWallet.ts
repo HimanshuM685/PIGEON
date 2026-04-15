@@ -1,17 +1,11 @@
 import * as bip39 from "bip39";
-import * as fc from "falcon-crypto";
+import { execFile } from "child_process";
+import { promisify } from "util";
+import * as path from "path";
 
-type FalconCryptoApi = {
-  keyPair: () => Promise<{ publicKey: Uint8Array; privateKey: Uint8Array }>;
-  signDetached: (message: Uint8Array, secretKey: Uint8Array) => Promise<Uint8Array>;
-  verifyDetached: (
-    signature: Uint8Array,
-    message: Uint8Array,
-    publicKey: Uint8Array
-  ) => Promise<void>;
-};
-
-const falcon = fc as unknown as FalconCryptoApi;
+const execFileAsync = promisify(execFile);
+const FALCON_LOGN = 9;
+const FALCON_CLI_PATH = path.join(process.cwd(), "falcon-main", "pigeon_falcon_cli");
 
 export interface PostQuantumKeypair {
   publicKey: Uint8Array;
@@ -26,11 +20,26 @@ export interface WalletConfig {
 }
 
 export class PostQuantumWallet {
+  private static async runFalconCli(args: string[]): Promise<string> {
+    try {
+      const { stdout } = await execFileAsync(FALCON_CLI_PATH, args, {
+        maxBuffer: 1024 * 1024,
+      });
+      return stdout.trim();
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      throw new Error(
+        `Falcon CLI failed. Build it with \`npm run build:falcon-cli\`. Details: ${message}`
+      );
+    }
+  }
+
   /**
-   * Initialize WASM Falcon runtime (can be called but is optional)
+   * Initialize Falcon runtime and verify native CLI availability
    */
   static async initialize(): Promise<void> {
-    console.log("✓ FALCON crypto ready (no init needed for falcon-crypto)");
+    await this.runFalconCli(["keygen", String(FALCON_LOGN)]);
+    console.log("✓ FALCON native CLI ready");
   }
 
   static validateMnemonic(mnemonic: string): boolean {
@@ -38,15 +47,16 @@ export class PostQuantumWallet {
   }
 
   static async generateFalconKeypair(): Promise<PostQuantumKeypair> {
-    const keypair = await falcon.keyPair();
+    const raw = await this.runFalconCli(["keygen", String(FALCON_LOGN)]);
+    const parsed = JSON.parse(raw) as { publicKeyHex?: string; secretKeyHex?: string };
 
-    const probeMessage = new TextEncoder().encode("falcon-self-check");
-    const signature = await falcon.signDetached(probeMessage, keypair.privateKey);
-    await falcon.verifyDetached(signature, probeMessage, keypair.publicKey);
+    if (!parsed.publicKeyHex || !parsed.secretKeyHex) {
+      throw new Error("Invalid keygen response from Falcon CLI");
+    }
 
     return {
-      publicKey: keypair.publicKey,
-      secretKey: keypair.privateKey,
+      publicKey: this.hexToPublicKey(parsed.publicKeyHex),
+      secretKey: new Uint8Array(Buffer.from(parsed.secretKeyHex, "hex")),
     };
   }
 
@@ -102,8 +112,18 @@ export class PostQuantumWallet {
         ? new TextEncoder().encode(message)
         : message;
 
-    const signature = await falcon.signDetached(messageBytes, secretKey);
-    return signature;
+    const raw = await this.runFalconCli([
+      "sign",
+      Buffer.from(secretKey).toString("hex"),
+      Buffer.from(messageBytes).toString("hex"),
+    ]);
+    const parsed = JSON.parse(raw) as { signatureHex?: string };
+
+    if (!parsed.signatureHex) {
+      throw new Error("Invalid sign response from Falcon CLI");
+    }
+
+    return new Uint8Array(Buffer.from(parsed.signatureHex, "hex"));
   }
 
   /**
@@ -124,8 +144,14 @@ export class PostQuantumWallet {
         : message;
 
     try {
-      await falcon.verifyDetached(signature, messageBytes, publicKey);
-      return true;
+      const raw = await this.runFalconCli([
+        "verify",
+        Buffer.from(publicKey).toString("hex"),
+        Buffer.from(messageBytes).toString("hex"),
+        Buffer.from(signature).toString("hex"),
+      ]);
+      const parsed = JSON.parse(raw) as { valid?: boolean };
+      return Boolean(parsed.valid);
     } catch {
       return false;
     }
