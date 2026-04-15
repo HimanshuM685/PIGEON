@@ -1,8 +1,8 @@
 import * as algosdk from "algosdk";
 import { findOnboardedUser, insertOnboardedUser } from "./onchain";
 import { PostQuantumWallet } from "./crypto/postQuantumWallet";
-import { encryptMnemonic } from "./crypto/mnemonic";
 import { bytesToHex } from "./crypto/walletSecret";
+import { encryptMnemonic } from "./crypto/mnemonic";
 
 export interface OnboardResult {
   alreadyOnboarded: boolean;
@@ -13,8 +13,11 @@ export interface OnboardResult {
 }
 
 /**
- * Onboard a user: create/import mnemonic, generate Falcon keys, derive Algorand address from mnemonic,
- * encrypt wallet secret with user password, store on-chain.
+ * Onboard a user:
+ * - default path: generate standard Algorand account + BIP39 mnemonic (wallet usability/recovery)
+ * - always generate Falcon keypair for post-quantum authentication/signing
+ * - import path: accept existing Algorand mnemonic
+ * Wallet secret is encrypted with user password and stored on-chain.
  * Password is required and is never stored; it is only used to encrypt the mnemonic.
  */
 export async function onboardUser(
@@ -46,13 +49,20 @@ export async function onboardUser(
 
   try {
     const trimmedImportedMnemonic = importedMnemonic?.trim();
-    const wallet = trimmedImportedMnemonic
-      ? await PostQuantumWallet.createWalletFromMnemonic(trimmedImportedMnemonic)
-      : await PostQuantumWallet.generateWallet(256);
-    const account = algosdk.mnemonicToSecretKey(wallet.mnemonic);
+    const account = trimmedImportedMnemonic
+      ? algosdk.mnemonicToSecretKey(trimmedImportedMnemonic)
+      : algosdk.generateAccount();
+
+    const mnemonic = trimmedImportedMnemonic
+      ? trimmedImportedMnemonic
+      : algosdk.secretKeyToMnemonic(account.sk);
+
+    const falconKeypair = await PostQuantumWallet.generateFalconKeypair();
+    const falconPublicKey = bytesToHex(falconKeypair.publicKey);
     const addressStr = typeof account.addr === "string" ? account.addr : String(account.addr);
-    const falconPublicKey = bytesToHex(wallet.falconKeypair.publicKey);
-    const encrypted = encryptMnemonic(wallet.mnemonic, password);
+
+    const encrypted = encryptMnemonic(mnemonic, password);
+
     await insertOnboardedUser(phone, addressStr, encrypted);
     return {
       alreadyOnboarded: false,
@@ -62,6 +72,17 @@ export async function onboardUser(
     };
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
-    return { alreadyOnboarded: false, error: `Onboard failed: ${message}` };
+
+    if (message.includes("tx.ApplicationArgs total length is too long")) {
+      return {
+        alreadyOnboarded: false,
+        error: "Onboard failed: payload too large for on-chain call. Please try again.",
+      };
+    }
+
+    return {
+      alreadyOnboarded: false,
+      error: `Onboard failed: ${message}`,
+    };
   }
 }

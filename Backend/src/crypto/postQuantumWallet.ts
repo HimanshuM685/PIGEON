@@ -20,7 +20,7 @@ export interface PostQuantumKeypair {
 
 export interface WalletConfig {
   mnemonic: string;
-  mnemonicPath?: string; // BIP39 derivation path (e.g., "m/44'/283'/0'/0'/0'")
+  mnemonicPath?: string;
   falconKeypair: PostQuantumKeypair;
   createdAt: Date;
 }
@@ -37,13 +37,25 @@ export class PostQuantumWallet {
     return bip39.validateMnemonic(mnemonic);
   }
 
+  static async generateFalconKeypair(): Promise<PostQuantumKeypair> {
+    const keypair = await falcon.keyPair();
+
+    const probeMessage = new TextEncoder().encode("falcon-self-check");
+    const signature = await falcon.signDetached(probeMessage, keypair.privateKey);
+    await falcon.verifyDetached(signature, probeMessage, keypair.publicKey);
+
+    return {
+      publicKey: keypair.publicKey,
+      secretKey: keypair.privateKey,
+    };
+  }
+
   /**
-   * Generate a new post-quantum wallet with BIP39 mnemonic
+   * Generate wallet with standard BIP39 mnemonic and Falcon auth keys
    * @param strength - Mnemonic strength: 128 (12 words) or 256 (24 words)
    * @returns Wallet configuration with FALCON keypair and mnemonic
    */
   static async generateWallet(strength: 128 | 256 = 256): Promise<WalletConfig> {
-    // Generate BIP39 mnemonic (standard wallet recovery phrase)
     const mnemonic = bip39.generateMnemonic(strength);
     return this.createWalletFromMnemonic(mnemonic);
   }
@@ -56,13 +68,13 @@ export class PostQuantumWallet {
       );
     }
 
-    const keypair = await falcon.keyPair();
+    const keypair = await this.generateFalconKeypair();
 
     return {
       mnemonic,
       falconKeypair: {
         publicKey: keypair.publicKey,
-        secretKey: keypair.privateKey,
+        secretKey: keypair.secretKey,
       },
       createdAt: new Date(),
     };

@@ -1,4 +1,4 @@
-import OpenAI from "openai";
+import { GoogleGenAI } from "@google/genai";
 
 export type IntentType = "send" | "get_balance" | "get_txn" | "onboard" | "get_address" | "fund" | "get_pvt_key" | "unknown";
 
@@ -64,27 +64,19 @@ function parseParams(obj: unknown): IntentParams {
   };
 }
 
-export async function getIntent(
-  message: string,
-  apiKey: string
-): Promise<IntentResult> {
-  const client = new OpenAI({
-    apiKey,
-    baseURL: "https://integrate.api.nvidia.com/v1",
+export async function getIntent(message: string, apiKey: string): Promise<IntentResult> {
+  const client = new GoogleGenAI({ apiKey });
+
+  const response = await client.models.generateContent({
+    model: "gemini-2.5-flash-lite",
+    config: {
+      responseMimeType: "application/json",
+      temperature: 0.1,
+    },
+    contents: `${INTENT_PROMPT}\n\nUser message: ${message}`,
   });
 
-  const completion = await client.chat.completions.create({
-    model: "google/gemma-7b",
-    messages: [
-      { role: "system", content: INTENT_PROMPT },
-      { role: "user", content: message },
-    ],
-    temperature: 0.2,
-    top_p: 0.7,
-    max_tokens: 1024,
-  });
-
-  const raw = (completion.choices[0]?.message?.content ?? "").trim();
+  const raw = (response.text ?? "").trim();
   const rawMessage = message;
 
   // Strip markdown code block if present

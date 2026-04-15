@@ -47,6 +47,7 @@ export interface WebhookResponse {
 // ─── httpSMS Send API ────────────────────────────────────────────────────────
 
 const HTTPSMS_API_URL = 'https://api.httpsms.com/v1/messages/send';
+const HTTPSMS_MAX_CONTENT_LENGTH = 2048;
 
 /**
  * Send an SMS reply through the httpSMS API.
@@ -62,6 +63,11 @@ async function sendSmsViaHttpSms(to: string, content: string): Promise<{ success
   }
 
   try {
+    const safeContent =
+      content.length > HTTPSMS_MAX_CONTENT_LENGTH
+        ? `${content.slice(0, HTTPSMS_MAX_CONTENT_LENGTH - 20)}\n...[truncated]`
+        : content;
+
     const res = await fetch(HTTPSMS_API_URL, {
       method: 'POST',
       headers: {
@@ -69,7 +75,7 @@ async function sendSmsViaHttpSms(to: string, content: string): Promise<{ success
         'x-api-key': apiKey,
       },
       body: JSON.stringify({
-        content,
+        content: safeContent,
         from: ownerPhone,
         to,
       }),
@@ -119,8 +125,25 @@ interface SmsProcessResult {
   containedPassword: boolean;
 }
 
+function getCommandMenuReply(): string {
+  return [
+    '👋 Welcome to PIGEON SMS Wallet!',
+    '',
+    'Available commands:',
+    '• "hello" / "help" / "commands" — show this menu',
+    '• "balance" — check wallet balance',
+    '• "address" — get your wallet address',
+    '• "create wallet" — create a new wallet',
+    '• "import wallet [mnemonic words]" — import wallet',
+    '• "send [amount] ALGO to [address/phone]" — send ALGO',
+    '• "fund me" — request testnet funds',
+    '• "get pvt key" — export recovery phrase',
+    '• "get txn" — show last 5 transactions',
+  ].join('\n');
+}
+
 /**
- * Process an incoming SMS from httpSMS webhook, classify intent via NVIDIA NIM,
+ * Process an incoming SMS from httpSMS webhook, classify intent via Gemini,
  * execute the action, and return a human-readable reply.
  *
  * Two-step flow for send & onboard:
@@ -128,9 +151,26 @@ interface SmsProcessResult {
  *   Step 2 — user replies with just the password → system executes + warns to delete
  */
 async function processIncomingSms(from: string, message: string): Promise<SmsProcessResult> {
-  const apiKey = process.env.NVIDIA_API_KEY;
+  const normalizedMessage = message.trim().toLowerCase();
+
+  if ([
+    'hello',
+    'hi',
+    'hey',
+    'help',
+    'menu',
+    'commands',
+    'start',
+  ].includes(normalizedMessage)) {
+    return { reply: getCommandMenuReply(), containedPassword: false };
+  }
+
+  const apiKey = process.env.GEMINI_API_KEY ?? process.env.GOOGLE_API_KEY;
   if (!apiKey) {
-    return { reply: '!!! Server error: AI classifier not configured', containedPassword: false };
+    return {
+      reply: `!!! Server error: AI classifier not configured\n\n${getCommandMenuReply()}`,
+      containedPassword: false,
+    };
   }
 
   const normPhone = normalizeSessionPhone(from);
@@ -273,11 +313,14 @@ async function processIncomingSms(from: string, message: string): Promise<SmsPro
       }
 
       default:
-        return { reply: '?? Could not understand your request. Try:\n• "balance" — check balance\n• "address" — get wallet address\n• "create wallet" — create a new wallet\n• "import wallet [mnemonic words]" — import an existing wallet\n• "send [amount] ALGO to [address/phone]" — send crypto\n• "fund me" — get testnet tokens\n• "get pvt key" — export your private key\n• "get txn" — last 5 transactions', containedPassword: false };
+        return { reply: `?? Could not understand your request.\n\n${getCommandMenuReply()}`, containedPassword: false };
     }
   } catch (err) {
     console.error('Intent processing error:', err);
-    return { reply: `!!! Processing failed: ${err instanceof Error ? err.message : String(err)}`, containedPassword: false };
+    return {
+      reply: `!!! Processing failed: ${err instanceof Error ? err.message : String(err)}\n\n${getCommandMenuReply()}`,
+      containedPassword: false,
+    };
   }
 }
 
@@ -298,7 +341,7 @@ async function executeOnboard(
   return {
     reply: onboardResult.importedMnemonic
       ? `Welcome! Your wallet has been imported successfully.\nAddress: ${onboardResult.address ?? 'N/A'}`
-      : `Welcome! Your ALGO wallet has been created.\nAddress: ${onboardResult.address ?? 'N/A'}`,
+      : `Welcome! Your ALGO wallet (BIP39) is created and Falcon auth is enabled.\nAddress: ${onboardResult.address ?? 'N/A'}`,
     containedPassword: true,
   };
 }
@@ -411,16 +454,38 @@ export function setupWebhookRoutes(app: express.Express): void {
   const processedEvents = new Set<string>();
   const DEDUP_TTL_MS = 5 * 60 * 1000; // keep IDs for 5 minutes
 
-  // ── httpSMS Webhook Endpoint ──────────────────────────────────────────────
-  app.post('/api/sms-webhook', express.json({ type: '*/*' }), async (req, res) => {
+  const handleHttpSmsWebhook = async (req: express.Request, res: express.Response) => {
     try {
-      const event = req.body as HttpSmsEvent;
+      console.log(
+        `[httpSMS] Webhook hit path=${req.path} content-type=${req.headers['content-type'] ?? 'unknown'}`
+      );
 
-      // Validate basic CloudEvents structure
-      if (!event.type || !event.data) {
+      const payload = req.body as Record<string, unknown>;
+
+      let eventType = 'message.phone.received';
+      let eventId = '';
+      let senderPhone = '';
+      let smsContent = '';
+      let ownerPhone = '';
+
+      if (payload?.type && payload?.data && typeof payload.data === 'object') {
+        const event = payload as HttpSmsEvent;
+        eventType = event.type;
+        eventId = event.id ?? '';
+        senderPhone = event.data.contact ?? '';
+        smsContent = event.data.content ?? '';
+        ownerPhone = event.data.owner ?? '';
+      } else if (typeof payload?.contact === 'string' && typeof payload?.content === 'string') {
+        eventType = typeof payload.type === 'string' ? payload.type : 'message.phone.received';
+        eventId = typeof payload.id === 'string' ? payload.id : '';
+        senderPhone = payload.contact;
+        smsContent = payload.content;
+        ownerPhone = typeof payload.owner === 'string' ? payload.owner : '';
+        console.warn('[httpSMS] Received non-CloudEvents payload; accepted via fallback parser');
+      } else {
         return res.status(400).json({
           success: false,
-          error: 'Invalid payload: missing "type" or "data" field',
+          error: 'Invalid payload: expected CloudEvents or { contact, content } format',
         });
       }
 
@@ -432,33 +497,29 @@ export function setupWebhookRoutes(app: express.Express): void {
         });
       }
 
-      console.log(`[httpSMS] Event received: ${event.type} | id=${event.id}`);
+      console.log(`[httpSMS] Event received: ${eventType} | id=${eventId || 'n/a'}`);
 
       // ── Deduplicate: skip if we already processed this event ID ─────────
-      if (event.id && processedEvents.has(event.id)) {
-        console.log(`[httpSMS] Duplicate event ignored: ${event.id}`);
+      if (eventId && processedEvents.has(eventId)) {
+        console.log(`[httpSMS] Duplicate event ignored: ${eventId}`);
         return res.status(200).json({
           success: true,
-          message: `Duplicate event ${event.id} ignored`,
+          message: `Duplicate event ${eventId} ignored`,
         });
       }
-      if (event.id) {
-        processedEvents.add(event.id);
-        setTimeout(() => processedEvents.delete(event.id), DEDUP_TTL_MS);
+      if (eventId) {
+        processedEvents.add(eventId);
+        setTimeout(() => processedEvents.delete(eventId), DEDUP_TTL_MS);
       }
 
       // ── Only process incoming SMS ───────────────────────────────────────
-      if (event.type !== 'message.phone.received') {
-        console.log(`[httpSMS] Acknowledged non-received event: ${event.type}`);
+      if (eventType !== 'message.phone.received' && eventType !== 'message.received') {
+        console.log(`[httpSMS] Acknowledged non-received event: ${eventType}`);
         return res.status(200).json({
           success: true,
-          message: `Event ${event.type} acknowledged`,
+          message: `Event ${eventType} acknowledged`,
         });
       }
-
-      const senderPhone = event.data.contact;
-      const smsContent = event.data.content;
-      const ownerPhone = event.data.owner;
 
       if (!senderPhone || !smsContent) {
         return res.status(400).json({
@@ -510,10 +571,13 @@ export function setupWebhookRoutes(app: express.Express): void {
         error: 'Internal server error',
       });
     }
-  });
+  };
 
-  // ── ESP32/SIM800L Webhook Endpoint ───────────────────────────────────────────
-  app.post('/api/esp32-sms-webhook', express.json({ type: '*/*' }), async (req, res) => {
+  // ── httpSMS Webhook Endpoints (primary + alias) ─────────────────────────
+  app.post('/api/sms-webhook', express.json({ type: '*/*' }), handleHttpSmsWebhook);
+  app.post('/sms-webhook', express.json({ type: '*/*' }), handleHttpSmsWebhook);
+
+  const handleEsp32Webhook = async (req: express.Request, res: express.Response) => {
     try {
       const { from, message, deviceId } = req.body;
 
@@ -552,7 +616,11 @@ export function setupWebhookRoutes(app: express.Express): void {
         error: 'Internal server error',
       });
     }
-  });
+  };
+
+  // ── ESP32/SIM800L Webhook Endpoints (primary + alias) ──────────────────
+  app.post('/api/esp32-sms-webhook', express.json({ type: '*/*' }), handleEsp32Webhook);
+  app.post('/esp32-sms-webhook', express.json({ type: '*/*' }), handleEsp32Webhook);
 
   // ── Health Check ──────────────────────────────────────────────────────────
   app.get('/api/webhook-health', (_req, res) => {
@@ -569,13 +637,18 @@ export function setupWebhookRoutes(app: express.Express): void {
         httpsms_api_key: process.env.HTTPSMS_API_KEY ? '> configured' : '!!! missing',
         httpsms_owner_phone: process.env.HTTPSMS_OWNER_PHONE ? '> configured' : '!!! missing',
         webhook_signing_key: process.env.HTTPSMS_WEBHOOK_SIGNING_KEY ? '> configured' : '!!! not set (validation disabled)',
-        nvidia_api_key: process.env.NVIDIA_API_KEY ? '> configured' : '!!! missing',
+        gemini_api_key:
+          process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY
+            ? '> configured'
+            : '!!! missing',
       },
     });
   });
 
   console.log('SMS webhook routes configured:');
   console.log('- POST /api/sms-webhook (httpSMS CloudEvents format)');
+  console.log('- POST /sms-webhook (httpSMS alias route)');
   console.log('- POST /api/esp32-sms-webhook (ESP32/SIM800L simple format)');
+  console.log('- POST /esp32-sms-webhook (ESP32 alias route)');
   console.log('- GET /api/webhook-health (health check)');
 }

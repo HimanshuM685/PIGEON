@@ -46,11 +46,11 @@ app.post("/api/sms", async (req, res) => {
       return;
     }
 
-    const apiKey = process.env.NVIDIA_API_KEY;
+    const apiKey = process.env.GEMINI_API_KEY ?? process.env.GOOGLE_API_KEY;
     if (!apiKey) {
       res.status(500).json({
         ok: false,
-        error: "NVIDIA_API_KEY is not configured",
+        error: "GEMINI_API_KEY (or GOOGLE_API_KEY) is not configured",
       });
       return;
     }

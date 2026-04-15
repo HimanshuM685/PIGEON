@@ -68,15 +68,37 @@ export async function sendAlgo(
   }
 
   let sk: Uint8Array;
+  const isUserAddressAlgorand = algosdk.isValidAddress(user.address);
+  if (!isUserAddressAlgorand) {
+    return {
+      success: false,
+      error: "This wallet is Falcon-only and has no Algorand account. Import an Algorand mnemonic to send ALGO.",
+    };
+  }
+
+  const walletSecret = (() => {
+    try {
+      return decryptWalletSecret(user.encrypted_mnemonic, password);
+    } catch {
+      return null;
+    }
+  })();
+
+  if (!walletSecret) {
+    return { success: false, error: "Wrong password (decrypt failed)" };
+  }
+
   try {
-    const walletSecret = decryptWalletSecret(user.encrypted_mnemonic, password);
     const account = algosdk.mnemonicToSecretKey(walletSecret.mnemonic);
     sk = account.sk;
     if (account.addr.toString() !== user.address) {
       return { success: false, error: "Wallet address mismatch" };
     }
   } catch {
-    return { success: false, error: "Wrong password (decrypt failed)" };
+    return {
+      success: false,
+      error: "Wallet mnemonic is not a valid Algorand recovery phrase. Re-onboard with an imported Algorand mnemonic.",
+    };
   }
 
   try {
