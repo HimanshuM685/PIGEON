@@ -1,0 +1,260 @@
+import { Address } from './encoding/address.js';
+import { ensureSafeUnsignedInteger } from './utils/utils.js';
+/**
+ * resourceReferencesToEncodingData translates an array of ResourceReferences into an array of encoding data
+ * maps.
+ */
+export function resourceReferencesToEncodingData(appIndex, references) {
+    const accessList = [];
+    function ensure(target) {
+        for (let idx = 0; idx < accessList.length; idx++) {
+            const a = accessList[idx];
+            const aAddress = a.get('d');
+            const addressesEqual = (!target.address && !aAddress) ||
+                (target.address &&
+                    aAddress &&
+                    target.address.equals(aAddress));
+            if (addressesEqual &&
+                a.get('s') === target.assetIndex &&
+                a.get('p') === target.appIndex) {
+                return idx + 1; // 1-based index
+            }
+        }
+        if (target.address) {
+            accessList.push(new Map([['d', target.address]]));
+        }
+        if (target.assetIndex) {
+            accessList.push(new Map([['s', target.assetIndex]]));
+        }
+        if (target.appIndex) {
+            accessList.push(new Map([['p', target.appIndex]]));
+        }
+        return accessList.length; // length is 1-based position of new element
+    }
+    const zeroAddr = Address.zeroAddress();
+    for (const rr of references) {
+        if (rr.address || rr.assetIndex || rr.appIndex) {
+            ensure(rr);
+            continue;
+        }
+        if (rr.holding) {
+            const h = rr.holding;
+            let addrIdx = 0;
+            if (h.address && !h.address.equals(zeroAddr)) {
+                addrIdx = ensure({ address: h.address });
+            }
+            const assetIdx = ensure({ assetIndex: h.assetIndex });
+            accessList.push(new Map([
+                [
+                    'h',
+                    new Map([
+                        ['d', addrIdx],
+                        ['s', assetIdx],
+                    ]),
+                ],
+            ]));
+            continue;
+        }
+        if (rr.locals) {
+            const l = rr.locals;
+            let addrIdx = 0;
+            if (l.address && !l.address.equals(zeroAddr)) {
+                addrIdx = ensure({ address: l.address });
+            }
+            let appIdx = 0;
+            if (l.appIndex && BigInt(l.appIndex) !== appIndex) {
+                appIdx = ensure({ appIndex: l.appIndex });
+            }
+            accessList.push(new Map([
+                [
+                    'l',
+                    new Map([
+                        ['d', addrIdx],
+                        ['p', appIdx],
+                    ]),
+                ],
+            ]));
+            continue;
+        }
+        if (rr.box) {
+            const b = rr.box;
+            let appIdx = 0;
+            if (b.appIndex && BigInt(b.appIndex) !== appIndex) {
+                appIdx = ensure({ appIndex: b.appIndex });
+            }
+            accessList.push(new Map([
+                [
+                    'b',
+                    new Map([
+                        ['i', appIdx],
+                        ['n', b.name],
+                    ]),
+                ],
+            ]));
+        }
+    }
+    return accessList;
+}
+export function convertIndicesToResourceReferences(accessList) {
+    const references = [];
+    for (const item of accessList) {
+        const address = item.get('d');
+        const assetIndex = item.get('s');
+        const appIndex = item.get('p');
+        if (address) {
+            references.push({ address });
+            continue;
+        }
+        if (assetIndex) {
+            references.push({ assetIndex });
+            continue;
+        }
+        if (appIndex) {
+            references.push({ appIndex });
+            continue;
+        }
+        const holding = item.get('h');
+        if (holding) {
+            const hAddressIndex = ensureSafeUnsignedInteger(holding.get('d') ?? 0);
+            const hAssetIndex = ensureSafeUnsignedInteger(holding.get('s'));
+            if (!hAssetIndex) {
+                throw new Error(`Holding missing asset index: ${holding}`);
+            }
+            const hAddress = hAddressIndex === 0
+                ? Address.zeroAddress()
+                : references[hAddressIndex - 1].address;
+            const asset = references[hAssetIndex - 1].assetIndex;
+            references.push({ holding: { address: hAddress, assetIndex: asset } });
+            continue;
+        }
+        const locals = item.get('l');
+        if (locals) {
+            const lAddressIndex = ensureSafeUnsignedInteger(locals.get('d') ?? 0);
+            const lAppIndex = ensureSafeUnsignedInteger(locals.get('p') ?? 0);
+            const lAddress = lAddressIndex === 0
+                ? Address.zeroAddress()
+                : references[lAddressIndex - 1].address;
+            const app = lAppIndex === 0
+                ? BigInt(0)
+                : references[lAppIndex - 1].appIndex;
+            references.push({ locals: { address: lAddress, appIndex: app } });
+            continue;
+        }
+        const box = item.get('b');
+        if (box) {
+            const bAppIndex = ensureSafeUnsignedInteger(box.get('i') ?? 0);
+            const name = box.get('n');
+            if (!name) {
+                throw new Error(`Box missing name: ${box}`);
+            }
+            const app = bAppIndex === 0
+                ? BigInt(0)
+                : references[bAppIndex - 1].appIndex;
+            references.push({ box: { appIndex: app, name } });
+        }
+    }
+    return references;
+}
+/**
+ * foreignArraysToResourceReferences makes a single array of ResourceReferences from various foreign resource arrays.
+ * Note, runtime representation of ResourceReference uses addresses, app and asset identifiers, not indexes.
+ *
+ * @param accounts - optional array of accounts
+ * @param foreignAssets - optional array of foreign assets
+ * @param foreignApps - optional array of foreign apps
+ * @param holdings - optional array of holdings
+ * @param locals - optional array of locals
+ * @param boxes - optional array of boxes
+ */
+export function foreignArraysToResourceReferences({ appIndex, accounts, foreignAssets, foreignApps, holdings, locals, boxes, }) {
+    const accessList = [];
+    function ensureAddress(addr) {
+        let addr2;
+        if (typeof addr === 'string') {
+            if (addr === '') {
+                return;
+            }
+            addr2 = Address.fromString(addr);
+        }
+        else {
+            addr2 = addr;
+        }
+        if (addr2.equals(Address.zeroAddress())) {
+            return;
+        }
+        let addrFound = false;
+        for (const rr of accessList) {
+            if (!rr.address) {
+                continue;
+            }
+            let rrAddress = rr.address;
+            if (typeof rr.address === 'string') {
+                rrAddress = Address.fromString(rr.address);
+            }
+            if (rrAddress.equals(addr2)) {
+                addrFound = true;
+                break;
+            }
+        }
+        if (!addrFound) {
+            accessList.push({ address: addr });
+        }
+    }
+    function ensureAsset(asset) {
+        let assetFound = false;
+        for (const rr of accessList) {
+            if (rr.assetIndex === asset) {
+                assetFound = true;
+                break;
+            }
+        }
+        if (!assetFound) {
+            accessList.push({ assetIndex: asset });
+        }
+    }
+    function ensureApp(app) {
+        let appFound = false;
+        for (const rr of accessList) {
+            if (rr.appIndex === app) {
+                appFound = true;
+                break;
+            }
+        }
+        if (!appFound) {
+            accessList.push({ appIndex: app });
+        }
+    }
+    for (const acct of accounts ?? []) {
+        ensureAddress(acct);
+    }
+    for (const asset of foreignAssets ?? []) {
+        ensureAsset(asset);
+    }
+    for (const app of foreignApps ?? []) {
+        ensureApp(app);
+    }
+    for (const holding of holdings ?? []) {
+        if (holding.address) {
+            ensureAddress(holding.address);
+        }
+        ensureAsset(holding.assetIndex);
+        accessList.push({ holding });
+    }
+    for (const local of locals ?? []) {
+        if (local.address) {
+            ensureAddress(local.address);
+        }
+        if (local.appIndex && BigInt(local.appIndex) !== appIndex) {
+            ensureApp(local.appIndex);
+        }
+        accessList.push({ locals: local });
+    }
+    for (const box of boxes ?? []) {
+        if (box.appIndex && BigInt(box.appIndex) !== appIndex) {
+            ensureApp(box.appIndex);
+        }
+        accessList.push({ box });
+    }
+    return accessList;
+}
+//# sourceMappingURL=appAccess.js.map

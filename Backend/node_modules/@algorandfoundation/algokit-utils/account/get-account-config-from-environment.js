@@ -1,0 +1,25 @@
+'use strict';
+
+/**  @deprecated Use algokit.mnemonicAccountFromEnvironment, which doesn't need this function
+ * Returns the Account configuration from environment variables
+ *
+ * @param accountName account name
+ *
+ * @example environment variables
+ * {accountName}_MNEMONIC
+ * {accountName}_SENDER
+ *
+ */
+function getAccountConfigFromEnvironment(accountName) {
+    if (!process || !process.env) {
+        throw new Error('Attempt to get account with private key from a non Node.js context; not supported!');
+    }
+    return {
+        accountMnemonic: process.env[`${accountName.toUpperCase()}_MNEMONIC`] || '',
+        senderAddress: process.env[`${accountName.toUpperCase()}_SENDER`],
+        accountName,
+    };
+}
+
+exports.getAccountConfigFromEnvironment = getAccountConfigFromEnvironment;
+//# sourceMappingURL=get-account-config-from-environment.js.map

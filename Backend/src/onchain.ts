@@ -83,6 +83,7 @@ export interface OnboardedUser {
     address: string | null;
     encrypted_mnemonic: string | null;
     created_at: number;
+    telegram_handle?: string;
 }
 
 /**
@@ -116,6 +117,7 @@ export async function findOnboardedUser(
             address: userData.address || null,
             encrypted_mnemonic: userData.encryptedMnemonic || null,
             created_at: Number(userData.createdAt),
+            telegram_handle: userData.telegramHandle || undefined,
         };
     } catch (err) {
         // If the box doesn't exist the contract will revert — treat as "not found"
@@ -153,8 +155,121 @@ export async function insertOnboardedUser(
     });
 }
 
+// ─── Telegram Identity Functions ────────────────────────────────────────────
+
+/**
+ * Look up a user on-chain by Telegram user ID.
+ *
+ * Flow: telegramId → telegramUsers BoxMap → phone/synthetic key → users BoxMap
+ * Returns null if not found.
+ */
+export async function findUserByTelegramId(
+    telegramId: string
+): Promise<OnboardedUser | null> {
+    const client = getAppClient();
+    const tgId = telegramId.toString();
+
+    try {
+        // Check if this Telegram ID is linked
+        const existsResult = await client.send.telegramExists({
+            args: { telegramId: tgId },
+        });
+        if (!existsResult.return) {
+            return null;
+        }
+
+        // Get the phone/synthetic key linked to this Telegram ID
+        const phoneResult = await client.send.getTelegramPhone({
+            args: { telegramId: tgId },
+        });
+        if (!phoneResult.return) {
+            return null;
+        }
+
+        const phone = phoneResult.return;
+
+        // Now look up the user record with that phone key
+        const result = await client.send.getUser({
+            args: { phone },
+        });
+        if (!result.return) return null;
+
+        const userData = result.return;
+        return {
+            phone,
+            address: userData.address || null,
+            encrypted_mnemonic: userData.encryptedMnemonic || null,
+            created_at: Number(userData.createdAt),
+            telegram_handle: userData.telegramHandle || undefined,
+        };
+    } catch (err) {
+        console.warn("findUserByTelegramId on-chain error (treating as not found):", err);
+        return null;
+    }
+}
+
+/**
+ * Onboard a new user via Telegram identity.
+ *
+ * Creates the user record with synthetic phone key "tg_<telegramId>"
+ * and the Telegram ID → phone mapping.
+ */
+export async function insertTelegramUser(
+    telegramId: string,
+    address: string,
+    encryptedMnemonic: string,
+    telegramHandle: string
+): Promise<void> {
+    const client = getAppClient();
+    const tgId = telegramId.toString();
+    const syntheticPhone = `tg_${tgId}`;
+
+    await client.send.onboardTelegramUser({
+        args: {
+            telegramId: tgId,
+            address: String(address ?? ""),
+            encryptedMnemonic: String(encryptedMnemonic ?? ""),
+            createdAt: BigInt(Math.floor(Date.now() / 1000)),
+            telegramHandle: String(telegramHandle ?? ""),
+        },
+        boxReferences: [
+            { appId: PIGEON_APP_ID, name: new TextEncoder().encode("u" + syntheticPhone) },
+            { appId: PIGEON_APP_ID, name: new TextEncoder().encode("t" + tgId) },
+        ],
+        populateAppCallResources: true,
+    });
+}
+
+/**
+ * Link a Telegram user ID to an existing phone-based user record.
+ * The phone-based user must already be onboarded.
+ */
+export async function linkTelegramToPhone(
+    telegramId: string,
+    phone: string,
+    telegramHandle: string
+): Promise<void> {
+    const normalised = normalizePhone(phone);
+    const client = getAppClient();
+    const tgId = telegramId.toString();
+
+    await client.send.linkTelegram({
+        args: {
+            telegramId: tgId,
+            phone: normalised,
+            telegramHandle: String(telegramHandle ?? ""),
+        },
+        boxReferences: [
+            { appId: PIGEON_APP_ID, name: new TextEncoder().encode("t" + tgId) },
+            { appId: PIGEON_APP_ID, name: new TextEncoder().encode("u" + normalised) },
+        ],
+        populateAppCallResources: true,
+    });
+}
+
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
 function normalizePhone(phone: string): string {
     return phone.replace(/\D/g, "").trim() || phone;
 }
+

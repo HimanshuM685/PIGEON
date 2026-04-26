@@ -1,0 +1,14 @@
+import JSONRequest from '../jsonrequest.js';
+import { decodeJSON } from '../../../encoding/encoding.js';
+import { GetBlockTimeStampOffsetResponse } from './models/types.js';
+export default class GetBlockOffsetTimestamp extends JSONRequest {
+    // eslint-disable-next-line class-methods-use-this
+    path() {
+        return `/v2/devmode/blocks/offset`;
+    }
+    // eslint-disable-next-line class-methods-use-this
+    prepare(response) {
+        return decodeJSON(response.getJSONText(), GetBlockTimeStampOffsetResponse);
+    }
+}
+//# sourceMappingURL=getBlockOffsetTimestamp.js.map

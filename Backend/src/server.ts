@@ -12,6 +12,7 @@ import { findOnboardedUser } from "./onchain";
 import { decryptWalletSecret } from "./crypto/walletSecret";
 import { setupWebhookRoutes } from "./webhook";
 import postQuantumRoutes from "./routes/postQuantumRoutes";
+import { startTelegramBot } from "./telegramBot";
 
 const app = express();
 app.use(cors());
@@ -229,6 +230,12 @@ app.post("/api/sms", async (req, res) => {
 const port = Number(process.env.PORT) || 3000;
 const server = app.listen(port, () => {
   console.log(`Server listening on http://localhost:${port}`);
+
+  // Start Telegram bot alongside Express server
+  const telegramBot = startTelegramBot();
+  if (telegramBot) {
+    console.log("Telegram bot running in long-polling mode");
+  }
 });
 server.on("error", (err: NodeJS.ErrnoException) => {
   if (err.code === "EADDRINUSE") {
