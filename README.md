@@ -1,69 +1,156 @@
-# PIGEON
+# 🕊️ PIGEON
 
-PIGEON is an **SMS-first Algorand wallet system** with:
+**Send crypto over SMS and Telegram.** PIGEON lets anyone create an Algorand wallet and send ALGO using just text messages — no app downloads, no browser extensions.
 
-1. **Backend** (`Backend/`) for intent parsing, onboarding, signing, and SMS/webhook orchestration.
-2. **Smart Contract** (`Pigeon-Contract/`) for on-chain user registry storage (phone → address + encrypted mnemonic).
-3. **Firmware** (`ESP32-Firmware/`) for GSM/SMS gateway flows.
+---
 
-## What changed (latest)
+## What is this?
 
-The backend now uses a **hybrid post-quantum wallet flow** by default:
+| Component | What it does |
+|---|---|
+| **Backend** (`Backend/`) | Express server + Telegram bot. Parses commands, manages wallets, signs transactions. |
+| **Smart Contract** (`Pigeon-Contract/`) | On-chain user registry on Algorand. Stores encrypted wallets keyed by phone or Telegram ID. |
+| **ESP32 Firmware** (`ESP32-Firmware/`) | Optional hardware SMS gateway using a SIM800L module. |
 
-1. **Falcon + mnemonic onboarding by default**
-   - New onboarding no longer uses plain `algosdk.generateAccount()`.
-   - Backend generates (or imports) a BIP39 mnemonic, generates Falcon keys, and derives Algorand address from the mnemonic.
-2. **Mnemonic import support for users**
-   - Users can import existing 12/24-word mnemonics during onboarding.
-3. **Contract compatibility preserved**
-   - Contract schema stays unchanged (`address`, `encrypted_mnemonic`, `created_at`), so deployment compatibility is maintained.
+---
 
-## Backend API highlights
+## How to run
 
-### SMS API
-- `POST /api/sms`
-  - Supports intents: `onboard`, `send`, `get_balance`, `get_address`, `get_txn`, `fund`, `get_pvt_key`.
-  - `onboard` now accepts optional `mnemonic` for wallet import.
+### Prerequisites
 
-### Post-Quantum routes
-- Base path: `POST /api/pq-wallet/*`
-- Endpoints:
-  - `/generate` → generate Falcon + mnemonic wallet material
-  - `/recover` → validate/import mnemonic and produce wallet material
-  - `/sign` → Falcon sign
-  - `/verify` → Falcon verify
-  - `/onboard` → create/import user wallet into backend + on-chain registry
+- **Node.js** ≥ 18
+- An **Algorand TestNet** admin wallet (25-word mnemonic) — you'll need this to fund users and write to the contract
+- A **deployed ContractPigeon** smart contract (get the App ID after deploying)
+- *(Optional)* A Telegram bot token from [@BotFather](https://t.me/BotFather)
+- *(Optional)* An [httpSMS](https://httpsms.com) account for SMS gateway
 
-## Smart contract
+### 1. Clone & install
 
-Contract location:
-- `Pigeon-Contract/projects/Pigeon-Contract/smart_contracts/contract_pigeon/contract.algo.ts`
-
-Current data model (BoxMap, phone-keyed):
-- `address`
-- `encryptedMnemonic`
-- `createdAt`
-
-No contract field changes were required for Falcon-by-default onboarding, because Falcon integration is handled in backend logic while on-chain storage remains schema-stable.
-
-## Quick start
-
-### Backend
 ```bash
-cd Backend
+git clone https://github.com/HimanshuM685/PIGEON.git
+cd PIGEON/Backend
 npm install
+```
+
+### 2. Configure environment
+
+```bash
+cp .env.example .env
+```
+
+Open `.env` and fill in:
+
+```env
+# Required ──────────────────────────────────────────
+GEMINI_API_KEY=your_google_ai_key        # or GOOGLE_API_KEY — powers intent parsing
+ADMIN_MNEMONIC=word1 word2 ... word25    # Algorand admin wallet (signs contract calls)
+PIGEON_APP_ID=123456789                  # App ID of your deployed ContractPigeon
+
+# Algorand TestNet (defaults work out of the box)
+ALGOD_SERVER=https://testnet-api.algonode.cloud
+
+# Telegram Bot (optional — skip to run SMS-only) ────
+TELEGRAM_BOT_TOKEN=your_token_from_botfather
+
+# SMS via httpSMS (optional) ────────────────────────
+HTTPSMS_API_KEY=your_key
+HTTPSMS_OWNER_PHONE=+1XXXXXXXXXX
+```
+
+### 3. Start
+
+```bash
 npm run dev
 ```
 
-### Contract project
+That's it. The server starts on `http://localhost:3000` and the Telegram bot (if configured) starts polling automatically.
+
+### 4. Deploy the smart contract (if not already deployed)
+
 ```bash
 cd Pigeon-Contract/projects/Pigeon-Contract
 npm install
 npm run build
+# Deploy using AlgoKit — set the returned App ID in your .env
 ```
 
-## Additional docs
+---
 
-- Root architecture: `DOCUMENTATION.md`
-- Backend PQ details: `Backend/POST_QUANTUM_WALLET.md`
-- Contract details: `Pigeon-Contract/projects/Pigeon-Contract/README.md`
+## Telegram Bot Commands
+
+Talk to your bot in Telegram. It acts like a CLI — not a chatbot.
+
+| Command | What it does |
+|---|---|
+| `create wallet` | Create a new Algorand wallet (prompts for password) |
+| `import wallet <mnemonic words>` | Import an existing wallet |
+| `balance` | Check your ALGO balance |
+| `address` | Show your wallet address |
+| `send 1 algo to @username` | Send ALGO to a Telegram user |
+| `send 0.5 algo to +919876543210` | Send ALGO to a phone number |
+| `send 2 algo to ALGO_ADDRESS...` | Send ALGO to a wallet address |
+| `fund me` | Get 1 free testnet ALGO |
+| `get txn` | Show last 5 transactions |
+| `get pvt key` | Export recovery phrase (requires password) |
+| `link phone +919876543210` | Link your phone number to Telegram |
+
+**Security:** Sensitive actions (send, export key) always ask for your password first. The bot tries to delete your password message and warns you to do the same.
+
+---
+
+## SMS Commands
+
+Send an SMS to the configured gateway number. Same commands, same wallet.
+
+| SMS | Action |
+|---|---|
+| `create wallet` | Onboard + create wallet |
+| `balance` | Check balance |
+| `send 5 algo to +919876543210` | Send ALGO |
+| `fund me` | Request testnet funds |
+| `get pvt key` | Export recovery phrase |
+
+---
+
+## API
+
+The backend also exposes a REST API:
+
+| Endpoint | Description |
+|---|---|
+| `POST /api/sms` | Process a wallet command (JSON: `{ from, message, password? }`) |
+| `POST /api/sms-webhook` | httpSMS webhook (CloudEvents format) |
+| `POST /api/esp32-sms-webhook` | ESP32/SIM800L webhook |
+| `POST /api/pq-wallet/*` | Post-quantum wallet operations (generate, recover, sign, verify) |
+| `GET /api/webhook-health` | Health check |
+
+---
+
+## Project structure
+
+```
+PIGEON/
+├── Backend/
+│   └── src/
+│       ├── server.ts              # Express server + bot startup
+│       ├── telegramBot.ts         # Telegram bot logic
+│       ├── telegramIdentity.ts    # @user / +phone / address resolver
+│       ├── webhook.ts             # SMS webhook handler
+│       ├── intent.ts              # AI intent parser (Gemini)
+│       ├── onboard.ts             # Wallet creation
+│       ├── send.ts                # ALGO transfers
+│       ├── balance.ts             # Balance lookup
+│       ├── fund.ts                # Testnet faucet
+│       ├── onchain.ts             # On-chain data layer
+│       └── crypto/                # Encryption + Falcon PQ keys
+├── Pigeon-Contract/               # Algorand smart contract (TEALScript)
+└── ESP32-Firmware/                # Hardware SMS gateway
+```
+
+---
+
+## Docs
+
+- **Architecture deep-dive:** [`DOCUMENTATION.md`](./DOCUMENTATION.md)
+- **Post-quantum wallet details:** [`Backend/POST_QUANTUM_WALLET.md`](./Backend/POST_QUANTUM_WALLET.md)
+- **SMS gateway setup:** [`Backend/sms-gateway-setup.md`](./Backend/sms-gateway-setup.md)

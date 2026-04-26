@@ -2,11 +2,11 @@
 
 ## 1. Overview
 
-PIGEON provides SMS-driven Algorand wallet operations with AI intent parsing and on-chain user registry storage.
+PIGEON provides SMS and Telegram-driven Algorand wallet operations with AI intent parsing and on-chain user registry storage.
 
 Primary components:
-1. `Backend/` - intent parsing, onboarding, signing, API/webhook routing.
-2. `Pigeon-Contract/` - Algorand smart contract for phone-keyed user records.
+1. `Backend/` - intent parsing, onboarding, signing, API/webhook routing, Telegram bot.
+2. `Pigeon-Contract/` - Algorand smart contract for phone/Telegram-keyed user records.
 3. `ESP32-Firmware/` - GSM/SMS gateway integration.
 
 ## 2. Current wallet model (updated)
@@ -32,8 +32,13 @@ Stored user fields:
 1. `address`
 2. `encryptedMnemonic`
 3. `createdAt`
+4. `telegramHandle`
 
-**Status:** backend and contract are aligned; no contract schema migration required for this update.
+Telegram identity mapping (BoxMap, `t` prefix):
+- Key: Telegram user ID (numeric string)
+- Value: phone/synthetic key linking to the primary `users` BoxMap
+
+**Status:** backend and contract are aligned; contract extended with Telegram identity support.
 
 ## 4. Backend API surfaces
 
@@ -55,7 +60,30 @@ Onboarding request supports:
 - `password` (required)
 - `mnemonic` (optional, for import flow)
 
-### 4.2 Post-Quantum API
+### 4.2 Telegram Bot
+
+The Telegram bot runs in **long-polling mode** alongside the Express server.
+
+Supported commands:
+1. `create wallet` — create new Falcon wallet
+2. `import wallet <mnemonic>` — import existing wallet
+3. `send <amount> algo to <target>` — send ALGO (targets: @username, +phone, wallet address)
+4. `balance` — check wallet balance
+5. `address` — get wallet address
+6. `fund me` — request testnet ALGO from admin
+7. `get txn` — show last 5 transactions
+8. `get pvt key` — export recovery phrase (password required)
+9. `link phone +91XXXXXXXXXX` — link SMS identity to Telegram
+
+Identity resolution:
+- `+phone` → on-chain phone lookup → Algorand address
+- `@username` → in-memory handle index → Algorand address
+- Raw string → validate as Algorand address
+
+Configuration:
+- `TELEGRAM_BOT_TOKEN` — from @BotFather
+
+### 4.3 Post-Quantum API
 
 Base route:
 - `POST /api/pq-wallet/*`
@@ -77,6 +105,8 @@ For sensitive actions (`onboard`, `send`, `get_pvt_key`):
 
 Import onboarding now works in this flow as well (mnemonic can be carried in the pending onboarding session).
 
+The Telegram bot follows the same two-step pattern, with an additional confirmation step for send transactions.
+
 ## 6. Security model
 
 1. Password is never stored.
@@ -84,6 +114,8 @@ Import onboarding now works in this flow as well (mnemonic can be carried in the
 3. Decryption happens only when needed (send/export).
 4. On-chain contract write actions remain admin-gated.
 5. Falcon signing routes are explicit API calls (no silent fallback).
+6. Telegram bot attempts to delete password messages after processing.
+7. Security warnings sent after any password-containing message.
 
 ## 7. Relevant files
 
@@ -92,12 +124,15 @@ Backend:
 2. `Backend/src/send.ts`
 3. `Backend/src/server.ts`
 4. `Backend/src/webhook.ts`
-5. `Backend/src/routes/postQuantumRoutes.ts`
-6. `Backend/src/crypto/postQuantumWallet.ts`
-7. `Backend/src/crypto/walletSecret.ts`
+5. `Backend/src/telegramBot.ts`
+6. `Backend/src/telegramIdentity.ts`
+7. `Backend/src/routes/postQuantumRoutes.ts`
+8. `Backend/src/crypto/postQuantumWallet.ts`
+9. `Backend/src/crypto/walletSecret.ts`
 
 Contract:
 1. `Pigeon-Contract/projects/Pigeon-Contract/smart_contracts/contract_pigeon/contract.algo.ts`
 
 Extended backend PQ doc:
 1. `Backend/POST_QUANTUM_WALLET.md`
+
