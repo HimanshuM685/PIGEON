@@ -21,7 +21,7 @@
 - **Node.js** ≥ 18
 - An **Algorand TestNet** admin wallet (25-word mnemonic) — you'll need this to fund users and write to the contract
 - A **deployed ContractPigeon** smart contract (get the App ID after deploying)
-- *(Optional)* A Telegram bot token from [@BotFather](https://t.me/BotFather)
+- A Telegram bot token from [@BotFather](https://t.me/BotFather)
 - *(Optional)* An [httpSMS](https://httpsms.com) account for SMS gateway
 
 ### 1. Clone & install
