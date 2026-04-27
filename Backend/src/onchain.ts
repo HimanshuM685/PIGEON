@@ -270,6 +270,7 @@ export async function linkTelegramToPhone(
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
 function normalizePhone(phone: string): string {
+    if (phone.startsWith("tg_")) return phone;
     return phone.replace(/\D/g, "").trim() || phone;
 }
 
