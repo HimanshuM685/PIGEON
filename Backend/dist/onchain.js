@@ -107,30 +107,22 @@ async function findOnboardedUser(phone) {
     const normalised = normalizePhone(phone);
     const client = getAppClient();
     try {
-        // First check if the user exists to avoid a revert
-        const existsResult = await client.send.userExists({
-            args: { phone: normalised },
-        });
-        if (!existsResult.return) {
-            return null;
-        }
-        const result = await client.send.getUser({
-            args: { phone: normalised },
-        });
-        if (!result.return)
-            return null;
-        const userData = result.return;
+        const phoneEncoded = algosdk.ABIType.from("string").encode(normalised);
+        const prefix = new Uint8Array(Buffer.from("u"));
+        const boxName = new Uint8Array(prefix.length + phoneEncoded.length);
+        boxName.set(prefix);
+        boxName.set(phoneEncoded, prefix.length);
+        const tupleValue = await client.appClient.getBoxValueFromABIType(boxName, algosdk.ABIType.from("(string,string,uint64,string)"));
         return {
             phone: normalised,
-            address: userData.address || null,
-            encrypted_mnemonic: userData.encryptedMnemonic || null,
-            created_at: Number(userData.createdAt),
-            telegram_handle: userData.telegramHandle || undefined,
+            address: tupleValue[0] || null,
+            encrypted_mnemonic: tupleValue[1] || null,
+            created_at: Number(tupleValue[2]),
+            telegram_handle: tupleValue[3] || undefined,
         };
     }
     catch (err) {
         // If the box doesn't exist the contract will revert — treat as "not found"
-        console.warn("findOnboardedUser on-chain error (treating as not found):", err);
         return null;
     }
 }
@@ -168,38 +160,17 @@ async function findUserByTelegramId(telegramId) {
     const client = getAppClient();
     const tgId = telegramId.toString();
     try {
-        // Check if this Telegram ID is linked
-        const existsResult = await client.send.telegramExists({
-            args: { telegramId: tgId },
-        });
-        if (!existsResult.return) {
-            return null;
-        }
-        // Get the phone/synthetic key linked to this Telegram ID
-        const phoneResult = await client.send.getTelegramPhone({
-            args: { telegramId: tgId },
-        });
-        if (!phoneResult.return) {
-            return null;
-        }
-        const phone = phoneResult.return;
+        const tgIdEncoded = algosdk.ABIType.from("string").encode(tgId);
+        const prefix = new Uint8Array(Buffer.from("t"));
+        const boxName = new Uint8Array(prefix.length + tgIdEncoded.length);
+        boxName.set(prefix);
+        boxName.set(tgIdEncoded, prefix.length);
+        const phoneValue = await client.appClient.getBoxValueFromABIType(boxName, algosdk.ABIType.from("string"));
+        const phone = String(phoneValue);
         // Now look up the user record with that phone key
-        const result = await client.send.getUser({
-            args: { phone },
-        });
-        if (!result.return)
-            return null;
-        const userData = result.return;
-        return {
-            phone,
-            address: userData.address || null,
-            encrypted_mnemonic: userData.encryptedMnemonic || null,
-            created_at: Number(userData.createdAt),
-            telegram_handle: userData.telegramHandle || undefined,
-        };
+        return await findOnboardedUser(phone);
     }
     catch (err) {
-        console.warn("findUserByTelegramId on-chain error (treating as not found):", err);
         return null;
     }
 }
