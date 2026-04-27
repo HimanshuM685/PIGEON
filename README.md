@@ -42,7 +42,7 @@ Open `.env` and fill in:
 
 ```env
 # Required ──────────────────────────────────────────
-GEMINI_API_KEY=your_google_ai_key        # or GOOGLE_API_KEY — powers intent parsing
+OPENROUTER_API_KEY=your_openrouter_key   # Powers intent parsing via OpenRouter/Gemma
 ADMIN_MNEMONIC=word1 word2 ... word25    # Algorand admin wallet (signs contract calls)
 PIGEON_APP_ID=123456789                  # App ID of your deployed ContractPigeon
 
@@ -82,8 +82,8 @@ Talk to your bot in Telegram. It acts like a CLI — not a chatbot.
 
 | Command | What it does |
 |---|---|
-| `create wallet` | Create a new Algorand wallet (prompts for password) |
-| `import wallet <mnemonic words>` | Import an existing wallet |
+| `create wallet` | Create a new Algorand wallet (prompts to share phone number & password) |
+| `import wallet <mnemonic words>` | Import an existing wallet (prompts to share phone number & password) |
 | `balance` | Check your ALGO balance |
 | `address` | Show your wallet address |
 | `send 1 algo to @username` | Send ALGO to a Telegram user |
@@ -136,7 +136,7 @@ PIGEON/
 │       ├── telegramBot.ts         # Telegram bot logic
 │       ├── telegramIdentity.ts    # @user / +phone / address resolver
 │       ├── webhook.ts             # SMS webhook handler
-│       ├── intent.ts              # AI intent parser (Gemini)
+│       ├── intent.ts              # AI intent parser (OpenRouter/Gemma)
 │       ├── onboard.ts             # Wallet creation
 │       ├── send.ts                # ALGO transfers
 │       ├── balance.ts             # Balance lookup
