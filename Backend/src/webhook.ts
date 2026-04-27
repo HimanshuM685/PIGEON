@@ -530,12 +530,16 @@ export function setupWebhookRoutes(app: express.Express): void {
 
       console.log(`[httpSMS] Incoming SMS from ${senderPhone} to ${ownerPhone}: "${smsContent}"`);
 
-      const allowedSender = process.env.ALLOWED_SENDER_PHONE;
-      if (allowedSender && senderPhone !== allowedSender) {
-        console.log(`[httpSMS] Skipping SMS from unauthorized sender: ${senderPhone}`);
+      // --- SKIP MECHANISM ---
+      // Automatically skip service/promotional SMS (alphanumeric sender IDs like "ADIGKS", "VK-SBI")
+      // A standard phone number should only contain '+', digits, and possibly spaces/hyphens
+      const isServiceSms = /[a-zA-Z]/.test(senderPhone);
+      
+      if (isServiceSms) {
+        console.log(`[httpSMS] Skipping SMS from service sender: ${senderPhone}`);
         return res.status(200).json({
           success: true,
-          message: `SMS from ${senderPhone} skipped (not allowed sender)`
+          message: `SMS from ${senderPhone} skipped`
         });
       }
 
