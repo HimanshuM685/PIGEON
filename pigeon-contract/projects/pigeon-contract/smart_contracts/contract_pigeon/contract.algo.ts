@@ -18,11 +18,13 @@ import {
  *   address      TEXT NOT NULL             →  UserData.address  (arc4.Str)
  *   encrypted_mnemonic TEXT NOT NULL       →  UserData.encryptedMnemonic (arc4.Str)
  *   created_at   INTEGER NOT NULL          →  UserData.createdAt (arc4.Uint64)
+ *   telegram_handle  TEXT                  →  UserData.telegramHandle (arc4.Str)
  */
 class UserData extends arc4.Struct<{
   address: arc4.Str
   encryptedMnemonic: arc4.Str
   createdAt: arc4.Uint64
+  telegramHandle: arc4.Str
 }> {}
 
 export class ContractPigeon extends Contract {
@@ -35,11 +37,20 @@ export class ContractPigeon extends Contract {
   /**
    * Primary data store.
    * Key  : normalised phone number (digits-only string)
-   * Value: UserData struct (address + encrypted mnemonic + timestamp)
+   * Value: UserData struct (address + encrypted mnemonic + timestamp + telegram handle)
    *
    * Each user occupies one Algorand box whose on-chain name is  "u" + phone.
    */
   users = BoxMap<arc4.Str, UserData>({ keyPrefix: 'u' })
+
+  /**
+   * Telegram identity mapping.
+   * Key  : Telegram user ID (numeric string)
+   * Value: phone number (digits-only string) — links to the primary `users` BoxMap
+   *
+   * Each mapping occupies one box with on-chain name "t" + telegramId.
+   */
+  telegramUsers = BoxMap<arc4.Str, arc4.Str>({ keyPrefix: 't' })
 
   /* ------------------------------------------------------------------ */
   /*  Lifecycle                                                          */
@@ -84,10 +95,80 @@ export class ContractPigeon extends Contract {
       address: address,
       encryptedMnemonic: encryptedMnemonic,
       createdAt: createdAt,
+      telegramHandle: new arc4.Str(''),
     })
 
     // Bump the counter
     this.totalUsers.value = this.totalUsers.value + 1
+  }
+
+  /**
+   * Register a new user on-chain via Telegram identity.
+   *
+   * Creates both the user record (keyed by synthetic phone = "tg_" + telegramId)
+   * and the Telegram ID → phone mapping.
+   *
+   * @param telegramId         Telegram user ID (numeric string)
+   * @param address            Algorand wallet address
+   * @param encryptedMnemonic  AES-256-GCM encrypted mnemonic
+   * @param createdAt          Unix timestamp
+   * @param telegramHandle     Telegram @username (without @)
+   */
+  onboardTelegramUser(
+    telegramId: arc4.Str,
+    address: arc4.Str,
+    encryptedMnemonic: arc4.Str,
+    createdAt: arc4.Uint64,
+    telegramHandle: arc4.Str,
+  ): void {
+    this.assertAdmin()
+
+    // Use "tg_" + telegramId as the synthetic phone key
+    const syntheticPhone = new arc4.Str('tg_' + telegramId.native)
+
+    assert(!this.users(syntheticPhone).exists, 'Telegram user already onboarded')
+
+    this.users(syntheticPhone).value = new UserData({
+      address: address,
+      encryptedMnemonic: encryptedMnemonic,
+      createdAt: createdAt,
+      telegramHandle: telegramHandle,
+    })
+
+    // Map telegramId → synthetic phone
+    this.telegramUsers(telegramId).value = syntheticPhone
+
+    this.totalUsers.value = this.totalUsers.value + 1
+  }
+
+  /**
+   * Link a Telegram user ID to an existing phone-based user record.
+   * Also stores the Telegram handle on the user record.
+   *
+   * @param telegramId     Telegram user ID (numeric string)
+   * @param phone          Phone number of the already-onboarded user
+   * @param telegramHandle Telegram @username (without @)
+   */
+  linkTelegram(
+    telegramId: arc4.Str,
+    phone: arc4.Str,
+    telegramHandle: arc4.Str,
+  ): void {
+    this.assertAdmin()
+    assert(this.users(phone).exists, 'Phone user not found')
+    assert(!this.telegramUsers(telegramId).exists, 'Telegram ID already linked')
+
+    // Map telegramId → phone
+    this.telegramUsers(telegramId).value = phone
+
+    // Update the user record with the telegram handle
+    const existing = clone(this.users(phone).value)
+    this.users(phone).value = new UserData({
+      address: existing.address,
+      encryptedMnemonic: existing.encryptedMnemonic,
+      createdAt: existing.createdAt,
+      telegramHandle: telegramHandle,
+    })
   }
 
   /**
@@ -107,12 +188,13 @@ export class ContractPigeon extends Contract {
     this.assertAdmin()
     assert(this.users(phone).exists, 'User not found')
 
-    // Preserve original createdAt
+    // Preserve original createdAt and telegramHandle
     const existing = clone(this.users(phone).value)
     this.users(phone).value = new UserData({
       address: address,
       encryptedMnemonic: encryptedMnemonic,
       createdAt: existing.createdAt,
+      telegramHandle: existing.telegramHandle,
     })
   }
 
@@ -162,6 +244,21 @@ export class ContractPigeon extends Contract {
    */
   getTotalUsers(): uint64 {
     return this.totalUsers.value
+  }
+
+  /**
+   * Get the phone number linked to a Telegram user ID.
+   */
+  getTelegramPhone(telegramId: arc4.Str): arc4.Str {
+    assert(this.telegramUsers(telegramId).exists, 'Telegram ID not linked')
+    return this.telegramUsers(telegramId).value
+  }
+
+  /**
+   * Check whether a Telegram user ID is linked.
+   */
+  telegramExists(telegramId: arc4.Str): boolean {
+    return this.telegramUsers(telegramId).exists
   }
 
   /* ------------------------------------------------------------------ */

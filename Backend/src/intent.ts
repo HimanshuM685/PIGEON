@@ -1,4 +1,4 @@
-import { GoogleGenAI } from "@google/genai";
+import { OpenRouter } from "@openrouter/sdk";
 
 export type IntentType = "send" | "get_balance" | "get_txn" | "onboard" | "get_address" | "fund" | "get_pvt_key" | "unknown";
 
@@ -65,18 +65,27 @@ function parseParams(obj: unknown): IntentParams {
 }
 
 export async function getIntent(message: string, apiKey: string): Promise<IntentResult> {
-  const client = new GoogleGenAI({ apiKey });
+  const openrouter = new OpenRouter({ apiKey });
 
-  const response = await client.models.generateContent({
-    model: "gemini-2.5-flash-lite",
-    config: {
-      responseMimeType: "application/json",
-      temperature: 0.1,
-    },
-    contents: `${INTENT_PROMPT}\n\nUser message: ${message}`,
+  const stream = await openrouter.chat.send({
+    model: "google/gemma-3n-e2b-it:free",
+    messages: [
+      { role: "system", content: INTENT_PROMPT },
+      { role: "user", content: message },
+    ],
+    stream: true,
   });
 
-  const raw = (response.text ?? "").trim();
+  let raw = "";
+  for await (const chunk of stream) {
+    const content = chunk.choices[0]?.delta?.content;
+    if (content) {
+      raw += content;
+      process.stdout.write(content);
+    }
+  }
+  console.log(); // Newline after stream
+  raw = raw.trim();
   const rawMessage = message;
 
   // Strip markdown code block if present

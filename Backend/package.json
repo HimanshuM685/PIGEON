@@ -11,21 +11,23 @@
     "lint": "eslint src/"
   },
   "dependencies": {
-    "@google/genai": "^1.16.0",
     "@algorandfoundation/algokit-utils": "^9.2.0",
     "@noble/curves": "^1.8.0",
     "@noble/hashes": "^1.7.0",
+    "@openrouter/sdk": "^0.1.27",
     "algosdk": "^3.5.2",
     "bip39": "^3.1.0",
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",
     "express": "^4.21.0",
-    "falcon-crypto": "^1.0.6"
+    "falcon-crypto": "^1.0.6",
+    "node-telegram-bot-api": "^0.67.0"
   },
   "devDependencies": {
     "@types/cors": "^2.8.17",
     "@types/express": "^5.0.0",
     "@types/node": "^22.12.0",
+    "@types/node-telegram-bot-api": "^0.64.14",
     "tsx": "^4.19.0",
     "typescript": "^5.7.0"
   }
