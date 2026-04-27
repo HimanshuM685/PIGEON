@@ -26,11 +26,13 @@ import * as algosdk from "algosdk";
 // ─── Types ──────────────────────────────────────────────────────────────────
 
 interface PendingSession {
-  action: "send" | "onboard" | "get_pvt_key";
+  action: "onboard_phone" | "onboard_password" | "send" | "get_pvt_key";
   /** Send params (only for 'send') */
   sendParams?: { amount: string; asset?: string; to: string; resolvedAddress: string };
   /** Optional: imported mnemonic for onboarding */
   onboardMnemonic?: string;
+  /** Phone number shared for onboarding */
+  onboardPhone?: string;
   /** Awaiting confirmation before asking for password */
   awaitingConfirmation?: boolean;
   createdAt: number;
@@ -150,6 +152,31 @@ async function handleMessage(bot: TelegramBot, msg: TelegramBot.Message): Promis
         }
       }
 
+      // If awaiting phone number
+      if (pending.action === "onboard_phone") {
+        let phone = "";
+        if (msg.contact && msg.contact.phone_number) {
+          phone = msg.contact.phone_number;
+        } else if (text && text.startsWith("+")) {
+          phone = text;
+        } else if (text && text.toLowerCase() === "skip") {
+          phone = `tg_${userId}`;
+        } else {
+          await reply(bot, chatId, "Please use the '📱 Share Contact' button, reply with your phone number starting with '+', or type 'skip'.");
+          return;
+        }
+
+        pending.action = "onboard_password";
+        pending.onboardPhone = phone;
+        pending.createdAt = Date.now();
+
+        await bot.sendMessage(chatId, "🔐 *Create Wallet*\n\nChoose a password and reply with it.\n⚠️ Remember it — it cannot be recovered!", {
+          parse_mode: "Markdown",
+          reply_markup: { remove_keyboard: true }
+        });
+        return;
+      }
+
       // Otherwise, this message IS the password
       pendingSessions.delete(userId);
       const password = text;
@@ -162,8 +189,8 @@ async function handleMessage(bot: TelegramBot, msg: TelegramBot.Message): Promis
       }
 
       // Execute the pending action
-      if (pending.action === "onboard") {
-        await executeOnboard(bot, chatId, userId, password, msg.from?.username, pending.onboardMnemonic);
+      if (pending.action === "onboard_password") {
+        await executeOnboard(bot, chatId, userId, password, msg.from?.username, pending.onboardMnemonic, pending.onboardPhone);
       } else if (pending.action === "send" && pending.sendParams) {
         await executeSend(bot, chatId, userId, password, pending.sendParams);
       } else if (pending.action === "get_pvt_key") {
@@ -349,18 +376,20 @@ async function handleCreateWallet(bot: TelegramBot, chatId: number, userId: numb
     return;
   }
 
-  // Start onboard flow — ask for password
+  // Ask for phone number first
   pendingSessions.set(userId, {
-    action: "onboard",
+    action: "onboard_phone",
     createdAt: Date.now(),
   });
 
-  await reply(bot, chatId, [
-    "🔐 *Create Wallet*",
-    "",
-    "Choose a password and reply with it.",
-    "⚠️ Remember it — it cannot be recovered!",
-  ].join("\n"), true);
+  await bot.sendMessage(chatId, "📱 *Link Phone Number*\n\nShare your phone number to access your wallet via SMS later, or type `skip` for a Telegram-only wallet.", {
+    parse_mode: "Markdown",
+    reply_markup: {
+      keyboard: [[{ text: "📱 Share Contact", request_contact: true }]],
+      one_time_keyboard: true,
+      resize_keyboard: true
+    }
+  });
 }
 
 async function handleImportWallet(bot: TelegramBot, chatId: number, userId: number, mnemonic: string): Promise<void> {
@@ -376,17 +405,19 @@ async function handleImportWallet(bot: TelegramBot, chatId: number, userId: numb
   } catch { }
 
   pendingSessions.set(userId, {
-    action: "onboard",
+    action: "onboard_phone",
     onboardMnemonic: mnemonic,
     createdAt: Date.now(),
   });
 
-  await reply(bot, chatId, [
-    "🔐 *Import Wallet*",
-    "",
-    "Reply with a password to encrypt and secure it.",
-    "⚠️ Remember it — it cannot be recovered!",
-  ].join("\n"), true);
+  await bot.sendMessage(chatId, "📱 *Link Phone Number*\n\nShare your phone number to access your imported wallet via SMS later, or type `skip` for a Telegram-only wallet.", {
+    parse_mode: "Markdown",
+    reply_markup: {
+      keyboard: [[{ text: "📱 Share Contact", request_contact: true }]],
+      one_time_keyboard: true,
+      resize_keyboard: true
+    }
+  });
 }
 
 async function handleSend(
@@ -489,34 +520,60 @@ async function executeOnboard(
   userId: number,
   password: string,
   username?: string,
-  importedMnemonic?: string
+  importedMnemonic?: string,
+  onboardPhone?: string
 ): Promise<void> {
   try {
-    const falconKeypair = await PostQuantumWallet.generateFalconKeypair();
+    let addressStr = "";
 
-    const algorandSeed = createHash("sha512")
-      .update(Buffer.from(falconKeypair.secretKey))
-      .update(Buffer.from(falconKeypair.publicKey))
-      .digest()
-      .subarray(0, 32);
+    // If user provided a real phone number
+    if (onboardPhone && onboardPhone !== `tg_${userId}`) {
+      const { onboardUser } = await import("./onboard");
+      const phone = onboardPhone.startsWith("+") ? onboardPhone : `+${onboardPhone}`;
 
-    const algorandPublicKey = ed25519.getPublicKey(algorandSeed);
-    const algorandSecretKey = Buffer.concat([
-      Buffer.from(algorandSeed),
-      Buffer.from(algorandPublicKey),
-    ]);
+      const onboardResult = await onboardUser(phone, password, importedMnemonic);
+      
+      if (onboardResult.error && !onboardResult.alreadyOnboarded) {
+        await reply(bot, chatId, `❌ Onboard failed: ${onboardResult.error}`);
+        return;
+      }
+      
+      addressStr = onboardResult.address ?? "";
+      
+      // Link Telegram ID to this phone
+      try {
+        await linkTelegramToPhone(userId.toString(), phone, username ?? "");
+      } catch (linkErr) {
+        console.warn("Link telegram to phone warning:", linkErr);
+      }
+    } else {
+      // Telegram-only onboard
+      const falconKeypair = await PostQuantumWallet.generateFalconKeypair();
 
-    const addressStr = algosdk.encodeAddress(algorandPublicKey);
-    const mnemonic = algosdk.secretKeyToMnemonic(new Uint8Array(algorandSecretKey));
+      const algorandSeed = createHash("sha512")
+        .update(Buffer.from(falconKeypair.secretKey))
+        .update(Buffer.from(falconKeypair.publicKey))
+        .digest()
+        .subarray(0, 32);
 
-    const encrypted = encryptMnemonic(mnemonic, password);
+      const algorandPublicKey = ed25519.getPublicKey(algorandSeed);
+      const algorandSecretKey = Buffer.concat([
+        Buffer.from(algorandSeed),
+        Buffer.from(algorandPublicKey),
+      ]);
 
-    await insertTelegramUser(
-      userId.toString(),
-      addressStr,
-      encrypted,
-      username ?? ""
-    );
+      addressStr = algosdk.encodeAddress(algorandPublicKey);
+      const mnemonic = algosdk.secretKeyToMnemonic(new Uint8Array(algorandSecretKey));
+
+      const encrypted = encryptMnemonic(mnemonic, password);
+
+      await insertTelegramUser(
+        userId.toString(),
+        addressStr,
+        encrypted,
+        username ?? ""
+      );
+    }
 
     // Index the handle for @username resolution
     if (username) {

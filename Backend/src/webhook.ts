@@ -143,7 +143,7 @@ function getCommandMenuReply(): string {
 }
 
 /**
- * Process an incoming SMS from httpSMS webhook, classify intent via Gemini,
+ * Process an incoming SMS from httpSMS webhook, classify intent via OpenRouter,
  * execute the action, and return a human-readable reply.
  *
  * Two-step flow for send & onboard:
@@ -165,7 +165,7 @@ async function processIncomingSms(from: string, message: string): Promise<SmsPro
     return { reply: getCommandMenuReply(), containedPassword: false };
   }
 
-  const apiKey = process.env.GEMINI_API_KEY ?? process.env.GOOGLE_API_KEY;
+  const apiKey = process.env.OPENROUTER_API_KEY;
   if (!apiKey) {
     return {
       reply: `!!! Server error: AI classifier not configured\n\n${getCommandMenuReply()}`,
@@ -530,6 +530,15 @@ export function setupWebhookRoutes(app: express.Express): void {
 
       console.log(`[httpSMS] Incoming SMS from ${senderPhone} to ${ownerPhone}: "${smsContent}"`);
 
+      const allowedSender = process.env.ALLOWED_SENDER_PHONE;
+      if (allowedSender && senderPhone !== allowedSender) {
+        console.log(`[httpSMS] Skipping SMS from unauthorized sender: ${senderPhone}`);
+        return res.status(200).json({
+          success: true,
+          message: `SMS from ${senderPhone} skipped (not allowed sender)`
+        });
+      }
+
       // Process intent and generate reply
       const { reply: replyText, containedPassword } = await processIncomingSms(senderPhone, smsContent);
       console.log(`[httpSMS] Reply to ${senderPhone}: "${replyText}"`);
@@ -637,8 +646,7 @@ export function setupWebhookRoutes(app: express.Express): void {
         httpsms_api_key: process.env.HTTPSMS_API_KEY ? '> configured' : '!!! missing',
         httpsms_owner_phone: process.env.HTTPSMS_OWNER_PHONE ? '> configured' : '!!! missing',
         webhook_signing_key: process.env.HTTPSMS_WEBHOOK_SIGNING_KEY ? '> configured' : '!!! not set (validation disabled)',
-        gemini_api_key:
-          process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY
+        openrouter_api_key: process.env.OPENROUTER_API_KEY
             ? '> configured'
             : '!!! missing',
       },

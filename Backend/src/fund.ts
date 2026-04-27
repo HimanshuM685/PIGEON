@@ -42,7 +42,7 @@ export async function fundUser(
   }
 
   // ── Rate limit: 1 fund per user per day ──
-  const normalised = phone.replace(/\D/g, "").trim() || phone;
+  const normalised = phone.startsWith("tg_") ? phone : (phone.replace(/\D/g, "").trim() || phone);
   const lastFund = lastFundMap.get(normalised);
   if (lastFund) {
     const elapsed = Date.now() - lastFund;
