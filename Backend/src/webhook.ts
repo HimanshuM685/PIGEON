@@ -469,7 +469,7 @@ export function setupWebhookRoutes(app: express.Express): void {
       let ownerPhone = '';
 
       if (payload?.type && payload?.data && typeof payload.data === 'object') {
-        const event = payload as HttpSmsEvent;
+        const event = payload as unknown as HttpSmsEvent;
         eventType = event.type;
         eventId = event.id ?? '';
         senderPhone = event.data.contact ?? '';
