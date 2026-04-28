@@ -118,11 +118,10 @@ The backend also exposes a REST API:
 
 | Endpoint | Description |
 |---|---|
-| `POST /api/sms` | Process a wallet command (JSON: `{ from, message, password? }`) |
-| `POST /api/sms-webhook` | httpSMS webhook (CloudEvents format) |
-| `POST /api/esp32-sms-webhook` | ESP32/SIM800L webhook |
-| `POST /api/pq-wallet/*` | Post-quantum wallet operations (generate, recover, sign, verify) |
-| `GET /api/webhook-health` | Health check |
+| `POST /api/sms-webhook` | For **httpSMS Android App** (CloudEvents format webhook) |
+| `POST /api/esp32-sms-webhook` | For **ESP32 Hardware** (SIM800L webhook) |
+| `POST /api/pq-wallet/*` | For **External Apps/Integrations** (Post-quantum operations) |
+| `GET /api/webhook-health` | For **Uptime Monitoring** (Health check) |
 
 ---
 
