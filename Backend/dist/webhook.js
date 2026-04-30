@@ -46,7 +46,8 @@ const onboard_1 = require("./onboard");
 const fund_1 = require("./fund");
 const transactions_1 = require("./transactions");
 // ─── httpSMS Send API ────────────────────────────────────────────────────────
-const HTTPSMS_API_URL = 'https://api.httpsms.com/v1/messages/send';
+const HTTPSMS_API_BASE_URL = process.env.HTTPSMS_API_BASE_URL || 'https://api.httpsms.com';
+const HTTPSMS_API_URL = `${HTTPSMS_API_BASE_URL.replace(/\/+$/, '')}/v1/messages/send`;
 const HTTPSMS_MAX_CONTENT_LENGTH = 2048;
 /**
  * Send an SMS reply through the httpSMS API.
@@ -551,6 +552,7 @@ function setupWebhookRoutes(app) {
                 health: 'GET /api/webhook-health',
             },
             config: {
+                httpsms_api_base_url: HTTPSMS_API_BASE_URL,
                 httpsms_api_key: process.env.HTTPSMS_API_KEY ? '> configured' : '!!! missing',
                 httpsms_owner_phone: process.env.HTTPSMS_OWNER_PHONE ? '> configured' : '!!! missing',
                 webhook_signing_key: process.env.HTTPSMS_WEBHOOK_SIGNING_KEY ? '> configured' : '!!! not set (validation disabled)',
