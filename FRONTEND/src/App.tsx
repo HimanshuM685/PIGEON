@@ -11,6 +11,8 @@ import { Team } from '@/sections/Team'
 import { Waitlist } from '@/sections/Waitlist'
 import { Footer } from '@/sections/Footer'
 import { Documentation } from '@/sections/Documentation'
+import { ProgressStats } from '@/sections/ProgressStats'
+import { Admin } from '@/sections/Admin'
 
 function App() {
   const [currentHash, setCurrentHash] = useState(window.location.hash);
@@ -48,6 +50,8 @@ function App() {
         <main className="relative z-10 blend-difference">
           {currentHash === '#docs' ? (
             <Documentation />
+          ) : currentHash === '#admin' ? (
+            <Admin />
           ) : (
             <>
               <Hero />
@@ -56,6 +60,7 @@ function App() {
               <HowItWorks />
               <Architecture />
               <Team />
+              <ProgressStats />
               <Waitlist />
             </>
           )}
