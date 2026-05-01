@@ -2,11 +2,11 @@ import { neon } from '@neondatabase/serverless'
 
 const neonDatabaseUrl = import.meta.env.VITE_NEON_DATABASE_URL as string
 
-if (!neonDatabaseUrl) {
-    throw new Error('Missing Neon environment variable. Check your .env.local file.')
-}
+// if (!neonDatabaseUrl) {
+//     throw new Error('Missing Neon environment variable. Check your .env.local file.')
+// }
 
-const sql = neon(neonDatabaseUrl)
+const sql: any = neonDatabaseUrl ? neon(neonDatabaseUrl) : () => { throw new Error('Database URL not configured') };
 
 function toDatabaseError(error: unknown): Error {
     if (error instanceof Error) {

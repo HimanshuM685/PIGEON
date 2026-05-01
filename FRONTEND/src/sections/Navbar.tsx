@@ -10,6 +10,7 @@ const navLinks = [
     { label: 'Architecture', href: '#architecture' },
     { label: 'Team', href: '#team' },
     { label: 'Waitlist', href: '#waitlist' },
+    { label: 'Docs', href: '#docs' },
 ]
 
 export function Navbar() {
@@ -24,11 +25,14 @@ export function Navbar() {
 
     const handleNavClick = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
         e.preventDefault()
+        window.location.hash = href;
         const el = document.querySelector(href)
         if (el) {
             el.scrollIntoView({ behavior: 'smooth' })
-            setMobileOpen(false)
+        } else {
+            window.scrollTo({ top: 0, behavior: 'smooth' })
         }
+        setMobileOpen(false)
     }
 
     return (
@@ -95,7 +99,7 @@ export function Navbar() {
             {/* Mobile Menu */}
             <div className={cn(
                 'md:hidden overflow-hidden transition-all duration-300 glass-strong',
-                mobileOpen ? 'max-h-96 border-t border-[var(--border)] mt-3' : 'max-h-0'
+                mobileOpen ? 'max-h-[500px] border-t border-[var(--border)] mt-3' : 'max-h-0'
             )}>
                 <div className="px-6 py-4 flex flex-col gap-4">
                     {navLinks.map((link) => (
@@ -103,11 +107,19 @@ export function Navbar() {
                             key={link.href}
                             href={link.href}
                             onClick={(e) => handleNavClick(e, link.href)}
-                            className="text-[var(--muted-foreground)] hover:text-white transition-colors"
+                            className="text-sm font-medium text-[var(--muted-foreground)] hover:text-white transition-colors duration-300"
                         >
                             {link.label}
                         </a>
                     ))}
+                    <a
+                        href="https://github.com/HimanshuM685/PIGEON"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="w-full px-4 py-2 mt-2 rounded-full text-sm font-medium border border-[var(--border)] hover:border-[var(--primary)] hover:text-[var(--primary)] transition-all duration-300 text-center"
+                    >
+                        GitHub
+                    </a>
                 </div>
             </div>
         </nav>

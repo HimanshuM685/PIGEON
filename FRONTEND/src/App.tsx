@@ -1,5 +1,6 @@
 import { AuroraBackground } from '@/components/ui/aurora-background'
 import { motion } from 'motion/react'
+import { useState, useEffect } from 'react'
 import { Navbar } from '@/sections/Navbar'
 import { Hero } from '@/sections/Hero'
 import { About } from '@/sections/About'
@@ -9,8 +10,17 @@ import { Architecture } from '@/sections/Architecture'
 import { Team } from '@/sections/Team'
 import { Waitlist } from '@/sections/Waitlist'
 import { Footer } from '@/sections/Footer'
+import { Documentation } from '@/sections/Documentation'
 
 function App() {
+  const [currentHash, setCurrentHash] = useState(window.location.hash);
+
+  useEffect(() => {
+    const handleHashChange = () => setCurrentHash(window.location.hash);
+    window.addEventListener('hashchange', handleHashChange);
+    return () => window.removeEventListener('hashchange', handleHashChange);
+  }, []);
+
   return (
     <AuroraBackground className="bg-black dark:bg-black">
       {/* 
@@ -36,13 +46,19 @@ function App() {
 
         {/* Main Content */}
         <main className="relative z-10 blend-difference">
-          <Hero />
-          <About />
-          <Features />
-          <HowItWorks />
-          <Architecture />
-          <Team />
-          <Waitlist />
+          {currentHash === '#docs' ? (
+            <Documentation />
+          ) : (
+            <>
+              <Hero />
+              <About />
+              <Features />
+              <HowItWorks />
+              <Architecture />
+              <Team />
+              <Waitlist />
+            </>
+          )}
         </main>
 
         {/* Footer — isolated from blend mode */}
