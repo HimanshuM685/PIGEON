@@ -24,15 +24,25 @@ export const defaultStatsData: StatsData = {
     footerText: "2 Changes in last 24hrs"
 };
 
+import { getDevelopmentStats } from '@/lib/neon';
+
 export function ProgressStats() {
     const [stats, setStats] = useState<StatsData>(defaultStatsData);
 
     useEffect(() => {
-        const saved = localStorage.getItem('pigeon_stats');
-        if (saved) {
-            try { setStats(JSON.parse(saved)); }
-            catch (e) { console.error("Failed to parse stats", e); }
-        }
+        const fetchStats = async () => {
+            const dbStats = await getDevelopmentStats();
+            if (dbStats) {
+                setStats(dbStats);
+            } else {
+                const saved = localStorage.getItem('pigeon_stats');
+                if (saved) {
+                    try { setStats(JSON.parse(saved)); }
+                    catch (e) { console.error("Failed to parse local stats", e); }
+                }
+            }
+        };
+        fetchStats();
     }, []);
 
     return (
