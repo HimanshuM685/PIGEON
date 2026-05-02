@@ -2,10 +2,9 @@ import { Github, ExternalLink } from 'lucide-react'
 
 export function Footer() {
     return (
-        <footer className="relative z-10 overflow-hidden flex flex-col items-center"
-            style={{ background: 'var(--accent)' }}>
+        <footer className="relative z-10 overflow-hidden flex flex-col items-center bg-dark-ink text-white">
             {/* Top stripe */}
-            <div className="w-full h-0.5 bg-[var(--primary)] opacity-50" />
+            <div className="w-full h-0.5 bg-vibrant-yellow opacity-50" />
 
             {/* Main content */}
             <div className="w-full max-w-7xl px-4 sm:px-6 pt-16 pb-12">
@@ -51,13 +50,13 @@ export function Footer() {
                         <h4 className="text-[10px] font-semibold tracking-[0.2em] uppercase mb-6 text-[rgba(242,242,223,0.5)] font-mono">Resources</h4>
                         <ul className="space-y-3.5">
                             <li>
-                                <a href="#how-it-works" className="text-[13px] text-[rgba(242,242,223,0.7)] hover:text-[var(--primary)] transition-colors duration-200">
+                                <a href="#how-it-works" className="text-[13px] text-[rgba(242,242,223,0.7)] hover:text-[var(--bg-yellow)] transition-colors duration-200">
                                     How It Works
                                 </a>
                             </li>
                             <li>
                                 <a href="https://github.com/HimanshuM685/PIGEON" target="_blank" rel="noopener noreferrer"
-                                    className="text-[13px] text-[rgba(242,242,223,0.7)] hover:text-[var(--primary)] transition-colors duration-200 inline-flex items-center gap-1">
+                                    className="text-[13px] text-[rgba(242,242,223,0.7)] hover:text-[var(--bg-yellow)] transition-colors duration-200 inline-flex items-center gap-1">
                                     Docs <ExternalLink size={11} className="opacity-50" />
                                 </a>
                             </li>
@@ -70,13 +69,13 @@ export function Footer() {
                         <ul className="space-y-3.5">
                             <li>
                                 <a href="https://github.com/HimanshuM685/PIGEON" target="_blank" rel="noopener noreferrer"
-                                    className="text-[13px] text-[rgba(242,242,223,0.7)] hover:text-[var(--primary)] transition-colors duration-200 inline-flex items-center gap-1.5">
+                                    className="text-[13px] text-[rgba(242,242,223,0.7)] hover:text-[var(--bg-yellow)] transition-colors duration-200 inline-flex items-center gap-1.5">
                                     <Github size={12} className="opacity-60" /> GitHub
                                 </a>
                             </li>
                             <li>
                                 <a href="https://testnet.explorer.perawallet.app/" target="_blank" rel="noopener noreferrer"
-                                    className="text-[13px] text-[rgba(242,242,223,0.7)] hover:text-[var(--primary)] transition-colors duration-200 inline-flex items-center gap-1.5">
+                                    className="text-[13px] text-[rgba(242,242,223,0.7)] hover:text-[var(--bg-yellow)] transition-colors duration-200 inline-flex items-center gap-1.5">
                                     <ExternalLink size={12} className="opacity-60" /> Algo Explorer
                                 </a>
                             </li>

@@ -26,6 +26,7 @@ export function Hero() {
         gsap.to(heroRef.current.querySelector('.hero-bg-text'), {
             y: 200,
             opacity: 0,
+            force3D: true,
             scrollTrigger: {
                 trigger: heroRef.current,
                 start: 'top top',
@@ -42,8 +43,8 @@ export function Hero() {
             className="relative min-h-screen flex items-end px-4 sm:px-8 pb-12 pt-32 overflow-hidden bg-vibrant-yellow"
         >
             {/* Massive Background Text Watermark */}
-            <div className="absolute top-1/2 left-0 -translate-y-1/2 w-full overflow-hidden pointer-events-none opacity-20 select-none flex">
-                <span className="hero-bg-text font-display text-[25vw] leading-[0.8] tracking-tighter whitespace-nowrap text-dark-ink">
+            <div className="absolute top-1/2 left-0 -translate-y-1/2 w-full overflow-hidden pointer-events-none opacity-10 md:opacity-20 select-none flex will-change-transform transform-gpu">
+                <span className="hero-bg-text font-display text-[20vw] md:text-[25vw] leading-[0.8] tracking-tighter whitespace-nowrap text-dark-ink will-change-transform transform-gpu">
                     PIGEON
                 </span>
             </div>
@@ -51,16 +52,16 @@ export function Hero() {
             <div className="relative z-10 w-full flex flex-col md:flex-row justify-between items-end gap-12">
                 
                 {/* Massive Headline */}
-                <div className="flex-1 overflow-hidden">
+                <div className="flex-1">
                     <h1 className="font-display flex flex-col uppercase tracking-tighter w-full">
                         <div className="overflow-hidden">
-                            <span className="hero-text-anim block text-massive text-dark-ink">SEND</span>
+                            <span className="hero-text-anim block text-massive text-dark-ink will-change-transform transform-gpu">SEND</span>
                         </div>
                         <div className="overflow-hidden">
-                            <span className="hero-text-anim block text-massive text-dark-ink" style={{ marginLeft: '10vw' }}>CRYPTO</span>
+                            <span className="hero-text-anim block text-massive text-dark-ink will-change-transform transform-gpu md:ml-[10vw]">CRYPTO</span>
                         </div>
                         <div className="overflow-hidden">
-                            <span className="hero-text-anim block text-massive text-dark-ink">VIA SMS.</span>
+                            <span className="hero-text-anim block text-massive text-dark-ink will-change-transform transform-gpu">VIA SMS.</span>
                         </div>
                     </h1>
                 </div>

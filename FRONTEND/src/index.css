@@ -62,14 +62,16 @@
 @layer utilities {
   /* Editorial Typography */
   .text-huge {
-    font-size: clamp(4.5rem, 16vw, 18rem);
-    line-height: 0.85;
+    font-size: clamp(2.5rem, 10vw, 12rem);
+    line-height: 0.95;
     letter-spacing: -0.05em;
+    padding-bottom: 0.05em;
   }
   .text-massive {
-    font-size: clamp(6rem, 25vw, 25rem);
-    line-height: 0.8;
+    font-size: clamp(3.5rem, 14vw, 18rem);
+    line-height: 0.95;
     letter-spacing: -0.06em;
+    padding-bottom: 0.05em;
   }
   .editorial-heading {
     font-family: var(--font-display);

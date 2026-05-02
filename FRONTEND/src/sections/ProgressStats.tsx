@@ -47,7 +47,7 @@ export function ProgressStats() {
                     </h2>
                 </div>
                 <div className="mt-20">
-                    <div className="text-[12rem] md:text-[18rem] leading-none font-display tracking-tighter text-vibrant-yellow mb-4">
+                    <div className="text-[7rem] sm:text-[10rem] md:text-[18rem] leading-none font-display tracking-tighter text-vibrant-yellow mb-4">
                         {stats.overallPercentage}%
                     </div>
                     <div className="text-xl font-medium opacity-80 max-w-sm">

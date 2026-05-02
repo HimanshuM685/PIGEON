@@ -23,13 +23,25 @@ export function Features() {
             <div className="grid grid-cols-12 gap-0 w-full">
                 
                 {/* Massive Header Block */}
-                <div className="col-span-12 bg-white text-[var(--text)] px-8 py-32 md:py-48 flex flex-col items-center justify-center text-center border-b border-gray-200">
-                    <span className="mb-6 inline-flex items-center gap-2 px-5 py-2 rounded-full border border-gray-300 text-xs font-bold uppercase tracking-widest">
+                <div className="col-span-12 bg-white text-[var(--text)] px-8 py-32 md:py-48 flex flex-col items-center md:items-start justify-center text-center md:text-left border-b border-gray-200">
+                    <motion.span 
+                        initial={{ opacity: 0, y: 20 }}
+                        whileInView={{ opacity: 1, y: 0 }}
+                        viewport={{ once: true, margin: '-10%' }}
+                        transition={{ duration: 0.6 }}
+                        className="mb-6 inline-flex items-center gap-2 px-5 py-2 rounded-full border border-gray-300 text-xs font-bold uppercase tracking-widest"
+                    >
                         Core Capabilities
-                    </span>
-                    <h2 className="editorial-heading text-huge text-[var(--text)]">
+                    </motion.span>
+                    <motion.h2 
+                        initial={{ opacity: 0, y: 40 }}
+                        whileInView={{ opacity: 1, y: 0 }}
+                        viewport={{ once: true, margin: '-10%' }}
+                        transition={{ duration: 0.8, delay: 0.1 }}
+                        className="editorial-heading text-huge text-[var(--text)]"
+                    >
                         EVERYTHING<br/>YOU NEED.
-                    </h2>
+                    </motion.h2>
                 </div>
 
                 {/* Grid Blocks */}

@@ -2,6 +2,7 @@ import { useRef } from 'react'
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import { MessageSquare, Brain, Shield, Radio, CheckCircle } from 'lucide-react'
+import { motion } from 'motion/react'
 
 gsap.registerPlugin(ScrollTrigger)
 
@@ -19,13 +20,25 @@ export function HowItWorks() {
     return (
         <section id="how-it-works" ref={containerRef} className="relative w-full z-20">
             {/* Header */}
-            <div className="w-full bg-[var(--bg)] text-[var(--text)] px-8 py-32 md:py-48 flex flex-col items-center justify-center text-center border-b border-gray-200">
-                <span className="mb-6 inline-flex items-center gap-2 px-5 py-2 rounded-full border border-gray-300 text-xs font-bold uppercase tracking-widest">
+            <div className="w-full bg-[var(--bg)] text-[var(--text)] px-8 py-32 md:py-48 flex flex-col items-center md:items-start justify-center text-center md:text-left border-b border-gray-200">
+                <motion.span 
+                    initial={{ opacity: 0, y: 20 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true, margin: '-10%' }}
+                    transition={{ duration: 0.6 }}
+                    className="mb-6 inline-flex items-center gap-2 px-5 py-2 rounded-full border border-gray-300 text-xs font-bold uppercase tracking-widest"
+                >
                     The Pipeline
-                </span>
-                <h2 className="editorial-heading text-huge">
+                </motion.span>
+                <motion.h2 
+                    initial={{ opacity: 0, y: 40 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true, margin: '-10%' }}
+                    transition={{ duration: 0.8, delay: 0.1 }}
+                    className="editorial-heading text-huge"
+                >
                     HOW IT<br/>WORKS.
-                </h2>
+                </motion.h2>
             </div>
 
             {/* Overlapping Sticky Steps */}
@@ -33,12 +46,12 @@ export function HowItWorks() {
                 {steps.map((step, i) => (
                     <div 
                         key={step.number}
-                        className={`sticky top-0 w-full min-h-screen flex items-center justify-center overflow-hidden ${step.bg} ${step.text} border-t border-black/10`}
+                        className={`sticky top-0 w-full min-h-screen flex items-center justify-center overflow-hidden ${step.bg} ${step.text} border-t border-black/10 will-change-transform transform-gpu`}
                         style={{ zIndex: i + 1 }}
                     >
                         {/* Massive Background Number */}
-                        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none opacity-[0.05] select-none flex">
-                            <span className="font-display text-[50vw] leading-none tracking-tighter">
+                        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none opacity-[0.03] md:opacity-[0.05] select-none flex will-change-transform transform-gpu">
+                            <span className="font-display text-[30vw] md:text-[50vw] leading-none tracking-tighter">
                                 {step.number}
                             </span>
                         </div>
