@@ -28,7 +28,7 @@ export function Architecture() {
                     whileInView={{ opacity: 1, y: 0 }}
                     viewport={{ once: true, margin: '-10%' }}
                     transition={{ duration: 0.8, delay: 0.1 }}
-                    className="editorial-heading text-[11.5vw] leading-none whitespace-nowrap"
+                    className="editorial-heading text-[11.3vw] leading-none whitespace-nowrap"
                 >
                     ARCHITECTURE
                 </motion.h2>
@@ -78,7 +78,7 @@ export function Architecture() {
 
             {/* Massive Bottom Text */}
             <div className="w-full overflow-hidden pointer-events-none opacity-5 select-none flex py-12 will-change-transform transform-gpu">
-                <span className="font-display text-[7vw] md:text-[10vw] leading-[0.8] tracking-tighter whitespace-nowrap text-white will-change-transform transform-gpu">
+                <span className="font-display text-[7vw] md:text-[9.8vw] leading-[0.8] tracking-tighter whitespace-nowrap text-white will-change-transform transform-gpu">
                     SYSTEM OVERVIEW
                 </span>
             </div>

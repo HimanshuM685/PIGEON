@@ -15,9 +15,13 @@ export function Footer() {
                             <img src="/favicon.svg" alt="Pigeon Logo" width="28" height="28" className="drop-shadow-md" />
                             <span className="editorial-heading text-xl tracking-[0.05em] uppercase text-[#F2F2DF]">Pigeon</span>
                         </div>
-                        <p className="text-[13px] text-[rgba(242,242,223,0.6)] leading-relaxed mb-6 max-w-[260px]">
+                        <p className="text-[13px] text-[rgba(242,242,223,0.6)] leading-relaxed mb-2 max-w-[260px]">
                             Peer Integrated Gateway for Encrypted On-chain Network
                         </p>
+                        <p className="text-[13px] text-[rgba(242,242,223,0.6)] leading-relaxed mb-5 max-w-[260px]">
+                            A Product By PiedPiper
+                        </p>
+
                         <p className="text-xs text-[rgba(242,242,223,0.35)] font-mono tracking-wide">
                             &copy; {new Date().getFullYear()} PIGEON
                         </p>

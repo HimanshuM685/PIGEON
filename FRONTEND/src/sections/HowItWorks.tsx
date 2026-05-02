@@ -7,11 +7,11 @@ import { motion } from 'motion/react'
 gsap.registerPlugin(ScrollTrigger)
 
 const steps = [
-    { icon: MessageSquare, number: '01', title: 'User Sends SMS',     description: '"Send 30 ALGO to 9912345678"',                                                                     bg: 'bg-dark-ink', text: 'text-white' },
-    { icon: Brain,         number: '02', title: 'AI Parses Intent',   description: 'Intent parser extracts: intent=send, amount=30, asset=ALGO, to=9912345678',                         bg: 'bg-vibrant-yellow', text: 'text-[var(--text)]' },
-    { icon: Shield,        number: '03', title: 'Decrypt & Sign',     description: 'Your wallet mnemonic is decrypted with your password and the transaction is signed locally.',        bg: 'bg-[var(--bg-pink)]', text: 'text-white' },
-    { icon: Radio,         number: '04', title: 'Broadcast',          description: 'Signed transaction is broadcast to Algorand for execution.',                                        bg: 'bg-[var(--bg-purple)]', text: 'text-white' },
-    { icon: CheckCircle,   number: '05', title: 'SMS Confirmation',   description: 'User receives an SMS with the transaction hash and status.',                                         bg: 'bg-white', text: 'text-[var(--text)]' },
+    { icon: MessageSquare, number: '01', title: 'User Sends SMS', description: '"Send 30 ALGO to 99XXXXXXXX"', bg: 'bg-dark-ink', text: 'text-white' },
+    { icon: Brain, number: '02', title: 'AI Parses Intent', description: 'Intent parser extracts: intent=send, amount=30, asset=ALGO, to=99XXXXXXXX', bg: 'bg-vibrant-yellow', text: 'text-[var(--text)]' },
+    { icon: Shield, number: '03', title: 'Decrypt & Sign', description: 'Your wallet mnemonic is decrypted with your password and the transaction is signed locally.', bg: 'bg-[var(--bg-pink)]', text: 'text-white' },
+    { icon: Radio, number: '04', title: 'Broadcast', description: 'Signed transaction is broadcast to Algorand for execution.', bg: 'bg-[var(--bg-purple)]', text: 'text-white' },
+    { icon: CheckCircle, number: '05', title: 'SMS Confirmation', description: 'User receives an SMS with the transaction hash and status.', bg: 'bg-white', text: 'text-[var(--text)]' },
 ]
 
 export function HowItWorks() {
@@ -21,7 +21,7 @@ export function HowItWorks() {
         <section id="how-it-works" ref={containerRef} className="relative w-full z-20">
             {/* Header */}
             <div className="w-full bg-[var(--bg)] text-[var(--text)] px-8 py-32 md:py-48 flex flex-col items-center justify-center text-center border-b border-gray-200">
-                <motion.span 
+                <motion.span
                     initial={{ opacity: 0, y: 20 }}
                     whileInView={{ opacity: 1, y: 0 }}
                     viewport={{ once: true, margin: '-10%' }}
@@ -30,14 +30,14 @@ export function HowItWorks() {
                 >
                     The Pipeline
                 </motion.span>
-                <motion.h2 
+                <motion.h2
                     initial={{ opacity: 0, y: 40 }}
                     whileInView={{ opacity: 1, y: 0 }}
                     viewport={{ once: true, margin: '-10%' }}
                     transition={{ duration: 0.8, delay: 0.1 }}
                     className="editorial-heading text-huge"
                 >
-                    HOW IT<br/>WORKS.
+                    HOW IT<br />WORKS.
                 </motion.h2>
                 <motion.span
                     initial={{ opacity: 0 }}
@@ -53,7 +53,7 @@ export function HowItWorks() {
             {/* Overlapping Sticky Steps */}
             <div className="relative">
                 {steps.map((step, i) => (
-                    <div 
+                    <div
                         key={step.number}
                         className={`sticky top-0 w-full min-h-screen flex items-center justify-center overflow-hidden ${step.bg} ${step.text} border-t border-black/10 will-change-transform transform-gpu`}
                         style={{ zIndex: i + 1 }}
