@@ -1,7 +1,7 @@
 'use client';
 
 import {
-    Send, Wallet, MessageCircle, Brain, KeyRound,
+    Wallet, MessageCircle, Brain, KeyRound,
     Smartphone, Shield, SendHorizontal
 } from 'lucide-react'
 import { motion, useReducedMotion } from 'motion/react'

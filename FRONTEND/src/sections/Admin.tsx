@@ -1,14 +1,42 @@
 import { useState } from 'react';
 import { motion } from 'motion/react';
-import { ShieldCheck, Plus, Settings } from 'lucide-react';
+import { ShieldCheck, Plus, Settings, BarChart3, Save } from 'lucide-react';
 import { getWaitlistCount } from '@/lib/neon';
 import { useEffect } from 'react';
+import { type StatsData, type StatCategory, defaultStatsData } from './ProgressStats';
 
 export function Admin() {
     const [isAuthenticated, setIsAuthenticated] = useState(false);
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
     const [count, setCount] = useState<number | null>(null);
+    const [stats, setStats] = useState<StatsData>(defaultStatsData);
+
+    useEffect(() => {
+        const saved = localStorage.getItem('pigeon_stats');
+        if (saved) {
+            try { setStats(JSON.parse(saved)); }
+            catch (e) { console.error("Failed to parse stats", e); }
+        }
+    }, []);
+
+    const saveStats = () => {
+        localStorage.setItem('pigeon_stats', JSON.stringify(stats));
+        alert('Stats updated successfully!');
+    };
+
+    const updateStatsWithCategories = (newCategories: StatCategory[]) => {
+        const totalTasks = newCategories.reduce((acc, cat) => acc + (cat.total || 0), 0);
+        const totalCompleted = newCategories.reduce((acc, cat) => acc + (cat.completed || 0), 0);
+        const overallPercentage = totalTasks === 0 ? 0 : Math.round((totalCompleted / totalTasks) * 100);
+        
+        setStats({
+            ...stats,
+            categories: newCategories,
+            totalTasks,
+            overallPercentage
+        });
+    };
 
     useEffect(() => {
         if (isAuthenticated) {
@@ -18,7 +46,9 @@ export function Admin() {
 
     const handleLogin = (e: React.FormEvent) => {
         e.preventDefault();
-        if (username === 'admin' && password === 'admin') setIsAuthenticated(true);
+        const adminUid = import.meta.env.VITE_ADMIN_UID;
+        const adminPassword = import.meta.env.VITE_ADMIN_PASSWORD;
+        if (username === adminUid && password === adminPassword) setIsAuthenticated(true);
         else alert('Invalid credentials');
     };
 
@@ -113,6 +143,97 @@ export function Admin() {
                             {count !== null ? count.toLocaleString() : '---'}
                         </div>
                         <p className="font-medium text-xl opacity-80 mt-4">Total waitlist registrations.</p>
+                    </div>
+
+                    {/* Progress Control Block */}
+                    <div className="col-span-1 md:col-span-2 rough-glass p-12 text-[var(--text)]">
+                        <div className="flex items-center justify-between mb-12">
+                            <div className="flex items-center gap-4">
+                                <BarChart3 size={32} className="opacity-80" />
+                                <h3 className="editorial-heading text-3xl">Progress Control</h3>
+                            </div>
+                            <button 
+                                onClick={saveStats}
+                                className="btn-editorial bg-vibrant-yellow text-dark-ink border-0 flex items-center gap-2"
+                            >
+                                <Save size={18} />
+                                Save Changes
+                            </button>
+                        </div>
+
+                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
+                            {/* General Stats */}
+                            <div className="space-y-6">
+                                <h4 className="font-mono text-xs font-bold uppercase tracking-widest opacity-60">General</h4>
+                                <div>
+                                    <label className="block text-xs font-bold uppercase mb-2">Overall Percentage</label>
+                                    <input 
+                                        type="number" 
+                                        value={stats.overallPercentage}
+                                        onChange={(e) => setStats({...stats, overallPercentage: parseInt(e.target.value)})}
+                                        className={inputClass}
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-bold uppercase mb-2">Total Tasks</label>
+                                    <input 
+                                        type="number" 
+                                        value={stats.totalTasks}
+                                        onChange={(e) => setStats({...stats, totalTasks: parseInt(e.target.value)})}
+                                        className={inputClass}
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-bold uppercase mb-2">Footer Text</label>
+                                    <input 
+                                        type="text" 
+                                        value={stats.footerText}
+                                        onChange={(e) => setStats({...stats, footerText: e.target.value})}
+                                        className={inputClass}
+                                    />
+                                </div>
+                            </div>
+
+                            {/* Category Stats */}
+                            <div className="lg:col-span-2 space-y-8">
+                                <h4 className="font-mono text-xs font-bold uppercase tracking-widest opacity-60">Categories</h4>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                                    {stats.categories.map((cat, idx) => (
+                                        <div key={cat.id} className="p-6 bg-white/50 border border-gray-200 rounded-2xl space-y-4">
+                                            <span className="editorial-heading text-lg">{cat.name}</span>
+                                            <div className="flex gap-4">
+                                                <div className="flex-1">
+                                                    <label className="block text-[10px] font-bold uppercase mb-1 opacity-60">Completed</label>
+                                                    <input 
+                                                        type="number" 
+                                                        value={cat.completed}
+                                                        onChange={(e) => {
+                                                            const newCats = [...stats.categories];
+                                                            newCats[idx] = { ...cat, completed: parseInt(e.target.value) || 0 };
+                                                            updateStatsWithCategories(newCats);
+                                                        }}
+                                                        className="w-full bg-white border border-gray-200 rounded-xl px-3 py-2 text-sm outline-none focus:border-dark-ink transition-all"
+                                                    />
+                                                </div>
+                                                <div className="flex-1">
+                                                    <label className="block text-[10px] font-bold uppercase mb-1 opacity-60">Total</label>
+                                                    <input 
+                                                        type="number" 
+                                                        value={cat.total}
+                                                        onChange={(e) => {
+                                                            const newCats = [...stats.categories];
+                                                            newCats[idx] = { ...cat, total: parseInt(e.target.value) || 0 };
+                                                            updateStatsWithCategories(newCats);
+                                                        }}
+                                                        className="w-full bg-white border border-gray-200 rounded-xl px-3 py-2 text-sm outline-none focus:border-dark-ink transition-all"
+                                                    />
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
                 </div>
