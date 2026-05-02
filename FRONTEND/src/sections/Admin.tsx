@@ -25,7 +25,8 @@ import { ShieldCheck, Plus, Settings, BarChart3, Save } from 'lucide-react';
                             const oldMatch = dbStats.categories.find(c => 
                                 c.name === defCat.name || 
                                 (c.name === 'Smart Contracts' && defCat.name === 'SmartContrat') ||
-                                (c.name === 'Bugs/Issues' && defCat.name === 'BugandIssues')
+                                (c.name === 'Bugs/Issues' && defCat.name === 'Bug/Issue') ||
+                                (c.name === 'BugandIssues' && defCat.name === 'Bug/Issue')
                             );
                             return oldMatch ? { ...defCat, completed: oldMatch.completed, total: oldMatch.total } : defCat;
                         });

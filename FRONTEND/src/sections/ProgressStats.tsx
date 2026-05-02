@@ -15,12 +15,10 @@ export const defaultStatsData: StatsData = {
     overallPercentage: 86,
     totalTasks: 670,
     categories: [
-        { id: 1, name: "Frontend",     completed: 196, total: 197, color: "var(--bg-pink)", bgColor: "rgba(236, 72, 153, 0.1)" },
-        { id: 2, name: "Backend",      completed: 119, total: 131, color: "var(--bg-blue)", bgColor: "rgba(59, 130, 246, 0.1)" },
-        { id: 3, name: "Media",        completed: 0,   total: 0,   color: "var(--bg-purple)", bgColor: "rgba(168, 85, 247, 0.1)" },
-        { id: 4, name: "Code",         completed: 181, total: 255, color: "var(--bg-yellow)", bgColor: "rgba(255, 214, 0, 0.1)" },
-        { id: 5, name: "BugandIssues", completed: 0,   total: 0,   color: "var(--text)", bgColor: "rgba(0, 0, 0, 0.05)" },
-        { id: 6, name: "SmartContrat", completed: 84,  total: 87,  color: "var(--bg-pink)", bgColor: "rgba(236, 72, 153, 0.1)" },
+        { id: 1, name: "Media",        completed: 0,   total: 0,   color: "var(--bg-purple)", bgColor: "rgba(168, 85, 247, 0.1)" },
+        { id: 2, name: "Code",         completed: 181, total: 255, color: "var(--bg-yellow)", bgColor: "rgba(255, 214, 0, 0.1)" },
+        { id: 3, name: "Bug/Issue",    completed: 0,   total: 0,   color: "var(--text)", bgColor: "rgba(0, 0, 0, 0.05)" },
+        { id: 4, name: "SmartContrat", completed: 84,  total: 87,  color: "var(--bg-pink)", bgColor: "rgba(236, 72, 153, 0.1)" },
     ],
     footerText: "2 Changes in last 24hrs"
 };
@@ -36,6 +34,7 @@ interface GithubCommit {
 export function ProgressStats() {
     const [stats, setStats] = useState<StatsData>(defaultStatsData);
     const [latestCommit, setLatestCommit] = useState<GithubCommit | null>(null);
+    const [commitCount, setCommitCount] = useState<number | null>(null);
 
     useEffect(() => {
         const fetchStats = async () => {
@@ -49,7 +48,8 @@ export function ProgressStats() {
                         const oldMatch = dbStats.categories.find(c => 
                             c.name === defCat.name || 
                             (c.name === 'Smart Contracts' && defCat.name === 'SmartContrat') ||
-                            (c.name === 'Bugs/Issues' && defCat.name === 'BugandIssues')
+                            (c.name === 'Bugs/Issues' && defCat.name === 'Bug/Issue') ||
+                            (c.name === 'BugandIssues' && defCat.name === 'Bug/Issue')
                         );
                         return oldMatch ? { ...defCat, completed: oldMatch.completed, total: oldMatch.total } : defCat;
                     });
@@ -70,7 +70,7 @@ export function ProgressStats() {
 
         const fetchCommit = async () => {
             try {
-                const res = await fetch('https://api.github.com/repos/HimanshuM685/PIGEON/commits?per_page=1');
+                const res = await fetch('https://api.github.com/repos/HimanshuM685/PIGEON/commits?per_page=100');
                 if (res.ok) {
                     const data = await res.json();
                     if (data && data.length > 0) {
@@ -79,6 +79,16 @@ export function ProgressStats() {
                             message: data[0].commit.message.split('\n')[0],
                             url: data[0].html_url
                         });
+
+                        const yesterday = new Date();
+                        yesterday.setHours(yesterday.getHours() - 24);
+                        
+                        const recentCommits = data.filter((commit: any) => {
+                            const commitDate = new Date(commit.commit.committer.date);
+                            return commitDate >= yesterday;
+                        });
+                        
+                        setCommitCount(recentCommits.length);
                     }
                 }
             } catch (e) {
@@ -142,7 +152,7 @@ export function ProgressStats() {
                     })}
                     <div className="pt-8 border-t border-gray-200 flex flex-col xl:flex-row justify-between items-start xl:items-center gap-4">
                         <div className="text-sm font-mono font-bold uppercase tracking-widest text-gray-400">
-                            {stats.footerText}
+                            {commitCount !== null ? `${commitCount} Changes in last 24hrs` : stats.footerText}
                         </div>
                         {latestCommit && (
                             <a 
