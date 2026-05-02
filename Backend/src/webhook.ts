@@ -116,6 +116,7 @@ async function sendSmsViaSmsGate(to: string, content: string): Promise<{ success
       body: JSON.stringify({
         phoneNumbers: [to],
         message: safeContent,
+        ...(process.env.SMSGATE_DEVICE_ID && { deviceId: process.env.SMSGATE_DEVICE_ID }),
       }),
     });
 
