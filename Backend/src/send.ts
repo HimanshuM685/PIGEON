@@ -46,19 +46,31 @@ export async function sendAlgo(
   const amountMicroAlgos = Math.floor(amountAlgo * MICROALGOS_PER_ALGO);
   let toAddress = params.to.trim();
 
-  // First check if it's a valid Algorand address
-  if (algosdk.isValidAddress(toAddress)) {
-    // It's a valid address, use it directly
-  } else {
-    // It's not a valid address, treat it as a destination/phone number and search on-chain
-    const toUser = await findOnboardedUser(toAddress);
-    if (toUser?.address) {
-      toAddress = toUser.address;
+  // Resolve the recipient — handles @tg_handle, +phone, and raw Algorand addresses
+  if (!algosdk.isValidAddress(toAddress)) {
+    // Try Telegram handle or phone resolution first
+    if (toAddress.startsWith('@') || toAddress.startsWith('+')) {
+      const { resolveTarget } = await import('./telegramIdentity');
+      const resolved = await resolveTarget(toAddress);
+      if (resolved.resolvedAddress) {
+        toAddress = resolved.resolvedAddress;
+      } else {
+        return {
+          success: false,
+          error: resolved.error ?? `Could not resolve "${params.to}".`,
+        };
+      }
     } else {
-      return {
-        success: false,
-        error: `Invalid recipient "${params.to}". Use a valid Algorand address or an onboarded phone number.`
-      };
+      // Try as phone number via on-chain lookup
+      const toUser = await findOnboardedUser(toAddress);
+      if (toUser?.address) {
+        toAddress = toUser.address;
+      } else {
+        return {
+          success: false,
+          error: `Invalid recipient "${params.to}". Use a valid Algorand address, @tg_handle, or onboarded phone number.`
+        };
+      }
     }
   }
 

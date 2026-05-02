@@ -1,4 +1,4 @@
-export type IntentType = "send" | "get_balance" | "get_txn" | "onboard" | "get_address" | "fund" | "get_pvt_key" | "unknown";
+export type IntentType = "send" | "get_balance" | "get_txn" | "onboard" | "get_address" | "fund" | "get_pvt_key" | "link" | "verify_otp" | "unknown";
 
 export interface IntentParams {
   amount?: string;
@@ -7,6 +7,7 @@ export interface IntentParams {
   txnId?: string;
   password?: string;
   mnemonic?: string;
+  linkTarget?: string;  // @tghandle or +phone for link commands
 }
 
 export interface IntentResult {

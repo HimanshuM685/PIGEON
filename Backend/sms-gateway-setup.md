@@ -1,29 +1,40 @@
-# SMS Gateway Setup — httpSMS
+# SMS Gateway Setup — SMSGate
 
 ## Overview
 
-PIGEON uses [httpSMS](https://httpsms.com) to turn an Android phone into an SMS gateway.  
-Incoming SMS → httpSMS webhook → PIGEON backend (AI intent) → reply SMS via httpSMS API.
+PIGEON uses [SMSGate](https://sms-gate.app/) to turn an Android phone into an SMS gateway.  
+Incoming SMS → SMSGate webhook → PIGEON backend (AI intent) → reply SMS via SMSGate API.
 
 ## Setup
 
-### 1. Install httpSMS Android App
-- Download from [Google Play](https://play.google.com/store/apps/details?id=com.httpsms)
-- Sign in and note your **API Key** from the httpSMS dashboard
+### 1. Install SMSGate Android App
+- Download from [Google Play](https://play.google.com/store/apps/details?id=app.sms_gate) or [GitHub Releases](https://github.com/capcom6/sms-gateway/releases)
+- Create an account and note your **username** and **password**
 
 ### 2. Configure Environment
 ```bash
 # In Backend/.env
-HTTPSMS_API_KEY=your_api_key_from_httpsms_dashboard
-HTTPSMS_OWNER_PHONE=+1234567890   # your Android phone number
-HTTPSMS_WEBHOOK_SIGNING_KEY=your_signing_key  # optional, for JWT validation
+SMSGATE_BASE_URL=https://api.sms-gate.app       # or your self-hosted URL
+SMSGATE_USERNAME=your_smsgate_username
+SMSGATE_PASSWORD=your_smsgate_password
 ```
 
-### 3. Configure Webhook in httpSMS Dashboard
-- Go to **Settings > Webhooks** at [httpsms.com/settings](https://httpsms.com/settings#webhooks)
-- **Callback URL**: `https://your-server.com/api/sms-webhook`
-- **Events**: Select `message.phone.received`
-- **Signing Key**: Set a secret (match `HTTPSMS_WEBHOOK_SIGNING_KEY` in `.env`)
+### 3. Configure Webhook in SMSGate
+Register a webhook via the SMSGate API:
+
+```bash
+curl -X POST https://api.sms-gate.app/3rdparty/v1/webhooks \
+  -u "your_username:your_password" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "event": "sms:received",
+    "url": "https://your-server.com/api/sms-webhook"
+  }'
+```
+
+Or configure via the SMSGate Android app settings.
+
+**Events to subscribe to:** `sms:received`
 
 ### 4. Expose Backend (Development)
 ```bash
@@ -35,39 +46,48 @@ ngrok http 3000
 ## How It Works
 
 ```
-User sends SMS → Android phone → httpSMS cloud → POST /api/sms-webhook
+User sends SMS → Android phone → SMSGate cloud → POST /api/sms-webhook
                                                         ↓
-                                              Parse CloudEvents payload
+                                              Parse IncomingMessage payload
                                                         ↓
-                                              NVIDIA NIM AI intent classifier
+                                              OpenRouter AI intent classifier
                                                         ↓
                                               Execute action (balance, address, etc.)
                                                         ↓
-                                              Reply via httpSMS Send API → SMS back to user
+                                              Reply via SMSGate Send API → SMS back to user
 ```
 
-## httpSMS Payload Format
+## SMSGate Webhook Payload Format
 
-httpSMS sends **CloudEvents** formatted webhooks:
+SMSGate `sms:received` webhook sends an **IncomingMessage** object:
 
 ```json
 {
-  "data": {
-    "contact": "+18005550100",
-    "content": "balance",
-    "message_id": "0b0123bb-...",
-    "owner": "+18005550199",
-    "sim": "SIM1",
-    "timestamp": "2023-06-29T03:21:19.814Z",
-    "user_id": "XtABz6..."
-  },
-  "id": "f4aed1d3-...",
-  "source": "/v1/messages/receive",
-  "specversion": "1.0",
-  "time": "2023-06-29T03:21:19.524Z",
-  "type": "message.phone.received"
+  "id": "PyDmBQZZXYmyxMwED8Fzy",
+  "sender": "+18005550100",
+  "contentPreview": "balance",
+  "type": "SMS",
+  "createdAt": "2024-01-01T00:00:00Z",
+  "recipient": "+18005550199",
+  "simNumber": 1
 }
 ```
+
+## SMSGate Send API
+
+To send an SMS reply, PIGEON calls `POST /3rdparty/v1/messages` with Basic Auth:
+
+```bash
+curl -X POST https://api.sms-gate.app/3rdparty/v1/messages \
+  -u "your_username:your_password" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "phoneNumbers": ["+18005550100"],
+    "message": "Your ALGO balance is 5.5 ALGO"
+  }'
+```
+
+**Authentication:** HTTP Basic Auth (`Authorization: Basic base64(username:password)`)
 
 ## Testing
 
@@ -75,31 +95,23 @@ httpSMS sends **CloudEvents** formatted webhooks:
 # Health check
 curl http://localhost:3000/api/webhook-health
 
-# Simulate incoming SMS
+# Simulate incoming SMS (SMSGate sms:received format)
 curl -X POST http://localhost:3000/api/sms-webhook \
   -H "Content-Type: application/json" \
   -d '{
-    "data": {
-      "contact": "+18005550100",
-      "content": "balance",
-      "message_id": "test-001",
-      "owner": "+18005550199",
-      "sim": "SIM1",
-      "timestamp": "2023-06-29T03:21:19.814Z",
-      "user_id": "test-user"
-    },
-    "datacontenttype": "application/json",
-    "id": "test-event-001",
-    "source": "/v1/messages/receive",
-    "specversion": "1.0",
-    "time": "2023-06-29T03:21:19.524Z",
-    "type": "message.phone.received"
+    "id": "test-msg-001",
+    "sender": "+18005550100",
+    "contentPreview": "balance",
+    "type": "SMS",
+    "createdAt": "2024-01-01T00:00:00Z",
+    "recipient": "+18005550199",
+    "simNumber": 1
   }'
 ```
 
 ## ESP32 + SIM800L Gateway (Alternative)
 
-Instead of httpSMS (requires Android phone), you can use an **ESP32 + SIM800L** hardware module as the SMS gateway.
+Instead of SMSGate (requires Android phone), you can use an **ESP32 + SIM800L** hardware module as the SMS gateway.
 
 ### Hardware Required
 - ESP32 dev board
@@ -125,7 +137,7 @@ Instead of httpSMS (requires Android phone), you can use an **ESP32 + SIM800L** 
 ```
 User sends SMS → SIM800L → ESP32 parses +CMT → HTTP POST /api/esp32-sms-webhook
                                                         ↓
-                                              NVIDIA NIM AI intent classifier
+                                              OpenRouter AI intent classifier
                                                         ↓
                                               Execute action (balance, send, etc.)
                                                         ↓
@@ -147,9 +159,25 @@ curl -X POST http://localhost:3000/api/esp32-sms-webhook \
 
 ## Security
 
-- **JWT Validation**: Set `HTTPSMS_WEBHOOK_SIGNING_KEY` to validate the `Authorization` Bearer token on each webhook request (HS256 signed)
+- **Basic Auth**: SMSGate API and webhook validation use HTTP Basic Auth — credentials are sent base64-encoded over HTTPS
 - **HTTPS**: Always use HTTPS in production
-- **Rate Limiting**: httpSMS has a 5-second timeout per webhook; respond quickly
+- **Rate Limiting**: Configure message sending limits via SMSGate settings API (`POST /3rdparty/v1/settings`)
+- **Concurrency**: The backend limits concurrent SMS processing to 5 simultaneous sessions. Additional requests are queued automatically.
+
+## SMSGate API Reference
+
+Full API documentation: [https://docs.sms-gate.app/](https://docs.sms-gate.app/)
+
+Key endpoints used by PIGEON:
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/3rdparty/v1/messages` | POST | Send SMS messages |
+| `/3rdparty/v1/messages/{id}` | GET | Check message delivery status |
+| `/3rdparty/v1/devices` | GET | List registered Android devices |
+| `/3rdparty/v1/webhooks` | POST | Register webhook for incoming SMS |
+| `/3rdparty/v1/webhooks` | GET | List registered webhooks |
+| `/3rdparty/v1/health` | GET | API health/readiness check |
 
 ## Supported SMS Commands
 
@@ -157,7 +185,8 @@ curl -X POST http://localhost:3000/api/esp32-sms-webhook \
 |---------|---------|------|
 | Balance | "balance", "how much ALGO" | Returns wallet balance |
 | Address | "my address", "get address" | Returns wallet address |
-| Send | "send 1 ALGO to ..." | Redirected to mobile app (security) |
-| Onboard | "create wallet" | Redirected to mobile app (security) |
-
-> **Note**: Send and onboard require password-protected wallet access, so they are only available through the PIGEON mobile app.
+| Send | "send 1 ALGO to ..." | Requires password (two-step flow) |
+| Onboard | "create wallet" | Requires password (two-step flow) |
+| Fund | "fund me" | Request testnet ALGO |
+| Transactions | "get txn" | Show last 5 transactions |
+| Export Key | "get pvt key" | Requires password (two-step flow) |

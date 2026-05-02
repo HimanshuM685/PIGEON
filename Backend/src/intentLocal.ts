@@ -45,6 +45,14 @@ const IMPORT_WALLET_PATTERN =
 const PVT_KEY_PATTERN =
   /^(?:get\s+pvt\s+key|private\s+key|export\s+key|recovery\s+phrase|seed\s+phrase|mnemonic|get\s+private\s+key|show\s+private\s+key)(?:\s+(?:password|pass|pw|pin)\s+(.+))?$/i;
 
+// Link: "link @tghandle" or "link +919123456789"
+const LINK_PATTERN =
+  /^link\s+(@[a-zA-Z0-9_]{2,}|\+\d{10,15})$/i;
+
+// OTP: exactly 6 digits (for verifying link OTPs)
+const OTP_PATTERN =
+  /^\d{6}$/;
+
 // ─── Classifier ─────────────────────────────────────────────────────────────
 
 /**
@@ -142,6 +150,25 @@ export function getIntentLocal(message: string): IntentResult | null {
     return {
       intent: 'send',
       params,
+      rawMessage: message,
+    };
+  }
+
+  // ── Link ─────────────────────────────────────────────────────────────────
+  const linkMatch = trimmed.match(LINK_PATTERN);
+  if (linkMatch) {
+    return {
+      intent: 'link',
+      params: { linkTarget: linkMatch[1] },
+      rawMessage: message,
+    };
+  }
+
+  // ── OTP (6-digit code) ──────────────────────────────────────────────────
+  if (OTP_PATTERN.test(trimmed)) {
+    return {
+      intent: 'verify_otp',
+      params: { password: trimmed },  // reuse password field to carry the OTP
       rawMessage: message,
     };
   }
