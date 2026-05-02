@@ -155,7 +155,7 @@ export function Waitlist() {
                 {/* Headline */}
                 <h2
                     ref={headlineRef}
-                    className="opacity-0 font-display font-black text-white uppercase tracking-tight mb-6"
+                    className="opacity-0 font-display font-black text-white text-center uppercase tracking-tight mb-6"
                     style={{ fontSize: 'clamp(2.5rem, 7vw, 5.5rem)', lineHeight: 0.95 }}
                 >
                     Join the{' '}
@@ -165,10 +165,9 @@ export function Waitlist() {
                 {/* Subtitle */}
                 <p
                     ref={subtitleRef}
-                    className="opacity-0 text-[var(--muted-foreground)] text-base md:text-lg leading-relaxed max-w-xl mx-auto mb-12"
+                    className="opacity-0 text-[var(--muted-foreground)] text-center text-balance text-base md:text-lg leading-relaxed max-w-4xl mx-auto mb-12"
                 >
-                    Be among the first to send crypto via SMS. Get early access, exclusive updates,
-                    and a chance to shape PIGEON before public launch.
+                    Be among the first to send crypto via SMS. Get early access, exclusive updates, and a chance to shape PIGEON before public launch.
                 </p>
 
                 {/* Social proof */}
@@ -202,15 +201,15 @@ export function Waitlist() {
                                     <CheckCircle2 size={32} className="text-green-400" />
                                 </div>
                             </div>
-                            <div>
-                                <p className="text-white font-display font-bold text-xl mb-2">You're on the list! 🎉</p>
-                                <p className="text-[var(--muted-foreground)] text-sm leading-relaxed">
+                            <div className="text-center">
+                                <p className="text-white font-display font-bold text-center text-xl mb-2">You're on the list! 🎉</p>
+                                <p className="text-[var(--muted-foreground)] text-center text-sm leading-relaxed">
                                     We'll reach out when PIGEON is ready for you. Keep an eye on your inbox.
                                 </p>
                             </div>
                             <button
                                 onClick={handleReset}
-                                className="mt-2 text-xs text-[var(--muted-foreground)] hover:text-white underline underline-offset-4 transition-colors"
+                                className="mt-2 text-xs text-[var(--muted-foreground)] hover:text-white text-center underline underline-offset-4 transition-colors"
                             >
                                 Add another email
                             </button>
@@ -226,15 +225,15 @@ export function Waitlist() {
                                     <Mail size={28} className="text-[var(--primary)]" />
                                 </div>
                             </div>
-                            <div>
-                                <p className="text-white font-display font-bold text-xl mb-2">Already registered!</p>
-                                <p className="text-[var(--muted-foreground)] text-sm">
+                            <div className="text-center">
+                                <p className="text-white font-display font-bold text-center text-xl mb-2">Already registered!</p>
+                                <p className="text-[var(--muted-foreground)] text-center text-sm">
                                     This email is already on the waitlist. We've got you covered.
                                 </p>
                             </div>
                             <button
                                 onClick={handleReset}
-                                className="mt-2 text-xs text-[var(--muted-foreground)] hover:text-white underline underline-offset-4 transition-colors"
+                                className="mt-2 text-xs text-[var(--muted-foreground)] hover:text-white text-center underline underline-offset-4 transition-colors"
                             >
                                 Try a different email
                             </button>
@@ -294,9 +293,9 @@ export function Waitlist() {
 
                             {/* Error message */}
                             {state === 'error' && errorMsg && (
-                                <div className="mt-4 flex items-start gap-2 px-4 py-3 rounded-xl bg-red-500/10 border border-red-500/20">
-                                    <AlertCircle size={15} className="text-red-400 mt-0.5 shrink-0" />
-                                    <p className="text-sm text-red-300">{errorMsg}</p>
+                                <div className="mt-4 flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-red-500/10 border border-red-500/20 text-center">
+                                    <AlertCircle size={15} className="text-red-400 shrink-0" />
+                                    <p className="text-sm text-red-300 text-center">{errorMsg}</p>
                                 </div>
                             )}
 
