@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "tsx watch src/server.ts",
     "build:falcon-cli": "cd falcon-main && cc -O3 -Wall -Wextra -o pigeon_falcon_cli pigeon_falcon_cli.c codec.c common.c deterministic.c falcon.c fft.c fpr.c keygen.c rng.c shake.c sign.c vrfy.c",
-    "build": "tsc",
+    "build": "npm run build:falcon-cli && tsc",
     "start": "node dist/server.js",
     "lint": "eslint src/"
   },

@@ -6,6 +6,7 @@ import { getAddress } from './address';
 import { onboardUser } from './onboard';
 import { fundUser } from './fund';
 import { getTransactions } from './transactions';
+import { createLinkRequest, verifyOtp, hasPendingLink } from './linkOtp';
 
 // ─── SMSGate Webhook Payload Types ──────────────────────────────────────────
 
@@ -136,14 +137,22 @@ async function sendSmsViaSmsGate(to: string, content: string): Promise<{ success
   }
 }
 
+/**
+ * Public export of sendSmsViaSmsGate for use by other modules
+ * (e.g. telegramBot.ts needs to send OTPs via SMS).
+ */
+export { sendSmsViaSmsGate as sendSmsViaSmsGateExport };
+
 // ─── Pending Sessions (two-step password flow) ─────────────────────────────
 
 interface PendingSession {
-  action: 'send' | 'onboard' | 'get_pvt_key';
+  action: 'send' | 'onboard' | 'get_pvt_key' | 'link_otp_verify';
   /** Send params (only for 'send') */
   sendParams?: { amount: string; asset?: string; to: string };
   /** Optional: imported mnemonic for onboarding */
   onboardMnemonic?: string;
+  /** Link target for OTP verification */
+  linkTarget?: string;
   createdAt: number;
 }
 
@@ -178,6 +187,8 @@ function getCommandMenuReply(): string {
     '• "fund me" — request testnet funds',
     '• "get pvt key" — export recovery phrase',
     '• "get txn" — show last 5 transactions',
+    '• "link @tghandle" — link your Telegram account',
+    '• "link +919XXXXXXXXX" — link another phone number',
   ].join('\n');
 }
 
@@ -238,6 +249,9 @@ async function processIncomingSms(from: string, message: string): Promise<SmsPro
     }
     if (pending.action === 'get_pvt_key') {
       return await executeGetPvtKey(from, password);
+    }
+    if (pending.action === 'link_otp_verify') {
+      return await executeLinkOtpVerify(from, password, pending.linkTarget);
     }
 
     return { reply: '!!! Something went wrong with the pending session. Please try again.', containedPassword: false };
@@ -351,6 +365,62 @@ async function processIncomingSms(from: string, message: string): Promise<SmsPro
         };
       }
 
+      case 'link': {
+        const linkTarget = intentResult.params.linkTarget ?? '';
+        if (!linkTarget) {
+          return { reply: '!!! Missing target. Use: link @tghandle or link +919XXXXXXXXX', containedPassword: false };
+        }
+
+        if (linkTarget.startsWith('@')) {
+          // SMS user wants to link their Telegram account
+          // Generate OTP → send to Telegram → user verifies by replying OTP via SMS
+          const handle = linkTarget.slice(1);
+          const otp = createLinkRequest('sms', normPhone, handle);
+
+          // Try to send OTP to the Telegram user
+          const { sendTelegramOtp } = await import('./telegramBot');
+          const sent = await sendTelegramOtp(handle, otp, from);
+          if (!sent) {
+            return {
+              reply: `!!! Could not send OTP to ${linkTarget}. They must have interacted with the PIGEON bot first.`,
+              containedPassword: false,
+            };
+          }
+
+          // Set up pending session to await OTP reply
+          pendingSessions.set(normPhone, {
+            action: 'link_otp_verify',
+            linkTarget: handle,
+            createdAt: Date.now(),
+          });
+
+          return {
+            reply: `OTP sent to ${linkTarget} on Telegram.\nReply with the 6-digit code to confirm linking:`,
+            containedPassword: false,
+          };
+        }
+
+        if (linkTarget.startsWith('+')) {
+          // SMS user wants to link another phone number (less common, but supported)
+          return {
+            reply: '!!! Phone-to-phone linking is not supported via SMS. Use Telegram to link a phone number.',
+            containedPassword: false,
+          };
+        }
+
+        return { reply: '!!! Invalid link target. Use: link @tghandle', containedPassword: false };
+      }
+
+      case 'verify_otp': {
+        // User sent a 6-digit OTP — check if there's a pending link for this phone
+        const otpCode = intentResult.params.password ?? '';
+        if (hasPendingLink(normPhone)) {
+          return await executeLinkOtpVerify(from, otpCode);
+        }
+        // No pending link — treat as unknown (might be a password for something else)
+        return { reply: `?? Could not understand your request.\n\n${getCommandMenuReply()}`, containedPassword: false };
+      }
+
       default:
         return { reply: `?? Could not understand your request.\n\n${getCommandMenuReply()}`, containedPassword: false };
     }
@@ -424,6 +494,64 @@ async function executeGetPvtKey(from: string, password: string): Promise<SmsProc
     };
   } catch {
     return { reply: '!!! Wrong password. Could not decrypt your private key.', containedPassword: true };
+  }
+}
+
+async function executeLinkOtpVerify(
+  from: string,
+  otpAttempt: string,
+  _linkTarget?: string
+): Promise<SmsProcessResult> {
+  const normPhone = normalizeSessionPhone(from);
+  const result = verifyOtp(normPhone, otpAttempt);
+
+  if (!result) {
+    return {
+      reply: '!!! Invalid or expired OTP. Please start the link process again with "link @tghandle".',
+      containedPassword: false,
+    };
+  }
+
+  // OTP verified — execute the link
+  try {
+    const { linkTelegramToPhone, findUserByTelegramId } = await import('./onchain');
+
+    if (result.sourceChannel === 'sms') {
+      // SMS user linking their Telegram: we need to find the TG user's ID from the handle
+      // The Telegram bot should have stored the chat ID when sending the OTP
+      const { getTelegramChatIdByHandle } = await import('./telegramBot');
+      const tgChatId = getTelegramChatIdByHandle(result.targetIdentity);
+
+      if (!tgChatId) {
+        return {
+          reply: `!!! Could not complete linking — @${result.targetIdentity} not found in bot records.`,
+          containedPassword: false,
+        };
+      }
+
+      await linkTelegramToPhone(tgChatId, from, result.targetIdentity);
+      return {
+        reply: `✅ Successfully linked your SMS account to Telegram @${result.targetIdentity}!`,
+        containedPassword: false,
+      };
+    }
+
+    if (result.sourceChannel === 'telegram') {
+      // Telegram user linked a phone — this OTP came via SMS
+      await linkTelegramToPhone(result.sourceIdentity, from, '');
+      return {
+        reply: `✅ Successfully linked your phone ${from} to your Telegram account!`,
+        containedPassword: false,
+      };
+    }
+
+    return { reply: '!!! Unknown link channel.', containedPassword: false };
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    return {
+      reply: `!!! Link failed: ${msg}`,
+      containedPassword: false,
+    };
   }
 }
 

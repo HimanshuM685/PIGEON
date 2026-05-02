@@ -22,11 +22,12 @@ import { encryptMnemonic } from "./crypto/mnemonic";
 import { createHash } from "crypto";
 import { ed25519 } from "@noble/curves/ed25519";
 import * as algosdk from "algosdk";
+import { createLinkRequest, verifyOtp, hasPendingLink } from "./linkOtp";
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
 interface PendingSession {
-  action: "onboard_phone" | "onboard_password" | "send" | "get_pvt_key";
+  action: "onboard_phone" | "onboard_password" | "send" | "get_pvt_key" | "link_otp_verify";
   /** Send params (only for 'send') */
   sendParams?: { amount: string; asset?: string; to: string; resolvedAddress: string };
   /** Optional: imported mnemonic for onboarding */
@@ -35,6 +36,8 @@ interface PendingSession {
   onboardPhone?: string;
   /** Awaiting confirmation before asking for password */
   awaitingConfirmation?: boolean;
+  /** Link target phone for OTP verification */
+  linkPhone?: string;
   createdAt: number;
 }
 
@@ -54,11 +57,70 @@ const ADDRESS_PATTERN = /^(?:address|get\s+address|addr|my\s+address)$/i;
 const FUND_PATTERN = /^(?:fund\s*me|fund)$/i;
 const TXN_PATTERN = /^(?:get\s+txn|txn|transactions|history)$/i;
 const PVT_KEY_PATTERN = /^(?:get\s+pvt\s+key|private\s+key|export\s+key|recovery\s+phrase|seed\s+phrase|mnemonic)$/i;
-const LINK_PHONE_PATTERN = /^link\s+phone\s+(\+\d{10,15})$/i;
+const LINK_PHONE_PATTERN = /^link\s+(\+\d{10,15})$/i;
+
+// ─── In-Memory Handle → Chat ID Index ────────────────────────────────────────
+// Stores @username → chat ID so the webhook can send OTPs to Telegram users
+const handleToChatId = new Map<string, number>();
 
 // ─── Bot Factory ────────────────────────────────────────────────────────────
 
 let botInstance: TelegramBot | null = null;
+
+/**
+ * Get the current bot instance (used by webhook.ts for cross-channel OTP delivery).
+ */
+export function getBotInstance(): TelegramBot | null {
+  return botInstance;
+}
+
+/**
+ * Look up a Telegram chat ID from a @handle.
+ * Returns the chat ID string or null if unknown.
+ */
+export function getTelegramChatIdByHandle(handle: string): string | null {
+  const normalised = handle.toLowerCase().replace(/^@/, "");
+  const chatId = handleToChatId.get(normalised);
+  return chatId ? chatId.toString() : null;
+}
+
+/**
+ * Send an OTP to a Telegram user by @handle.
+ * Returns true if sent successfully, false if the handle is unknown.
+ */
+export async function sendTelegramOtp(
+  handle: string,
+  otp: string,
+  fromPhone: string
+): Promise<boolean> {
+  const bot = getBotInstance();
+  if (!bot) return false;
+
+  const normalised = handle.toLowerCase().replace(/^@/, "");
+  const chatId = handleToChatId.get(normalised);
+
+  if (!chatId) {
+    console.warn(`[Telegram] Cannot send OTP — @${handle} not in chat ID index`);
+    return false;
+  }
+
+  try {
+    await bot.sendMessage(chatId, [
+      `🔗 *Account Link Request*`,
+      ``,
+      `Phone ${fromPhone} wants to link to your Telegram account.`,
+      ``,
+      `Your verification code: \`${otp}\``,
+      ``,
+      `They need to reply with this code via SMS to confirm.`,
+      `This code expires in 5 minutes.`,
+    ].join("\n"), { parse_mode: "Markdown" });
+    return true;
+  } catch (err) {
+    console.error(`[Telegram] Failed to send OTP to @${handle}:`, err);
+    return false;
+  }
+}
 
 /**
  * Initialize and start the Telegram bot in long-polling mode.
@@ -83,7 +145,13 @@ export function startTelegramBot(): TelegramBot | null {
   console.log("[Telegram] Bot starting in long-polling mode...");
 
   // ── Register handlers ─────────────────────────────────────────────────
-  bot.on("message", (msg) => handleMessage(bot, msg));
+  bot.on("message", (msg) => {
+    handleMessage(bot, msg);
+    // Index the handle → chatId for OTP delivery
+    if (msg.from?.username && msg.chat?.id) {
+      handleToChatId.set(msg.from.username.toLowerCase(), msg.chat.id);
+    }
+  });
 
   bot.on("polling_error", (err) => {
     console.error("[Telegram] Polling error:", err.message);
@@ -195,6 +263,8 @@ async function handleMessage(bot: TelegramBot, msg: TelegramBot.Message): Promis
         await executeSend(bot, chatId, userId, password, pending.sendParams);
       } else if (pending.action === "get_pvt_key") {
         await executeGetPvtKey(bot, chatId, userId, password);
+      } else if (pending.action === "link_otp_verify" && pending.linkPhone) {
+        await executeLinkOtpVerifyTg(bot, chatId, userId, password, pending.linkPhone, msg.from?.username);
       }
 
       // Security warning
@@ -292,7 +362,7 @@ async function sendWelcome(bot: TelegramBot, chatId: number): Promise<void> {
     "• `fund me` — request testnet ALGO",
     "• `get txn` — recent transactions",
     "• `get pvt key` — export recovery phrase",
-    "• `link phone +91XXXXXXXXXX` — link phone number",
+    "• `link phone +91XXXXXXXXXX` — link phone number (with OTP)",
     "",
     "Targets: `@username`, `+phone`, or wallet address",
   ].join("\n");
@@ -493,23 +563,34 @@ async function handleLinkPhone(
   phone: string,
   username?: string
 ): Promise<void> {
+  // Generate OTP and send to the phone via SMSGate
+  const otp = createLinkRequest('telegram', userId.toString(), phone);
+
+  // Send OTP to the phone number via SMS
   try {
-    await linkTelegramToPhone(
-      userId.toString(),
+    const { sendSmsViaSmsGateExport } = await import('./webhook');
+    const smsResult = await sendSmsViaSmsGateExport(
       phone,
-      username ?? ""
+      `🔗 PIGEON Link Code: ${otp}\n\nA Telegram user wants to link this phone number. Reply with this code on Telegram to confirm. Expires in 5 min.`
     );
-    await reply(bot, chatId, `✅ Phone ${phone} linked to your Telegram account.`);
-  } catch (err) {
-    const msg = err instanceof Error ? err.message : String(err);
-    if (msg.includes("already linked")) {
-      await reply(bot, chatId, "❌ This Telegram account is already linked to a phone number.");
-    } else if (msg.includes("not found")) {
-      await reply(bot, chatId, "❌ Phone number not onboarded via SMS. Onboard via SMS first, then link.");
-    } else {
-      await reply(bot, chatId, `❌ Link failed: ${msg}`);
+
+    if (!smsResult.success) {
+      await reply(bot, chatId, `❌ Could not send OTP to ${phone}: ${smsResult.error}`);
+      return;
     }
+  } catch (err) {
+    await reply(bot, chatId, `❌ Failed to send OTP: ${err instanceof Error ? err.message : String(err)}`);
+    return;
   }
+
+  // Store pending session — waiting for OTP reply
+  pendingSessions.set(userId, {
+    action: "link_otp_verify",
+    linkPhone: phone,
+    createdAt: Date.now(),
+  });
+
+  await reply(bot, chatId, `📩 OTP sent to ${phone} via SMS.\nReply here with the 6-digit code to confirm linking:`);
 }
 
 // ─── Action Executors (step 2 — after password) ─────────────────────────────
@@ -654,6 +735,35 @@ async function executeGetPvtKey(
     ].join("\n"), true);
   } catch {
     await reply(bot, chatId, "❌ Wrong password.");
+  }
+}
+
+async function executeLinkOtpVerifyTg(
+  bot: TelegramBot,
+  chatId: number,
+  userId: number,
+  otpAttempt: string,
+  linkPhone: string,
+  username?: string
+): Promise<void> {
+  const result = verifyOtp(userId.toString(), otpAttempt);
+
+  if (!result) {
+    await reply(bot, chatId, "❌ Invalid or expired OTP. Please start the link process again with `link phone +91XXXXXXXXXX`.");
+    return;
+  }
+
+  // OTP verified — execute the link
+  try {
+    await linkTelegramToPhone(
+      userId.toString(),
+      linkPhone,
+      username ?? ""
+    );
+    await reply(bot, chatId, `✅ Phone ${linkPhone} linked to your Telegram account!`);
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    await reply(bot, chatId, `❌ Link failed: ${msg}`);
   }
 }
 
