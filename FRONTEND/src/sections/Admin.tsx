@@ -17,7 +17,24 @@ import { ShieldCheck, Plus, Settings, BarChart3, Save } from 'lucide-react';
             const fetchStats = async () => {
                 const dbStats = await getDevelopmentStats();
                 if (dbStats) {
-                    setStats(dbStats);
+                    const dbCatNames = dbStats.categories.map(c => c.name).join(',');
+                    const defaultCatNames = defaultStatsData.categories.map(c => c.name).join(',');
+                    
+                    if (dbCatNames !== defaultCatNames) {
+                        const mergedCategories = defaultStatsData.categories.map(defCat => {
+                            const oldMatch = dbStats.categories.find(c => 
+                                c.name === defCat.name || 
+                                (c.name === 'Smart Contracts' && defCat.name === 'SmartContrat') ||
+                                (c.name === 'Bugs/Issues' && defCat.name === 'BugandIssues')
+                            );
+                            return oldMatch ? { ...defCat, completed: oldMatch.completed, total: oldMatch.total } : defCat;
+                        });
+                        const newStats = { ...dbStats, categories: mergedCategories };
+                        setStats(newStats);
+                        updateDevelopmentStats(newStats).catch(console.error);
+                    } else {
+                        setStats(dbStats);
+                    }
                 } else {
                     const saved = localStorage.getItem('pigeon_stats');
                     if (saved) {
