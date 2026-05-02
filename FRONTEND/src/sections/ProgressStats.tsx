@@ -18,7 +18,7 @@ export const defaultStatsData: StatsData = {
         { id: 1, name: "Media",        completed: 0,   total: 0,   color: "var(--bg-purple)", bgColor: "rgba(168, 85, 247, 0.1)" },
         { id: 2, name: "Code",         completed: 181, total: 255, color: "var(--bg-yellow)", bgColor: "rgba(255, 214, 0, 0.1)" },
         { id: 3, name: "Bug/Issue",    completed: 0,   total: 0,   color: "var(--text)", bgColor: "rgba(0, 0, 0, 0.05)" },
-        { id: 4, name: "SmartContrat", completed: 84,  total: 87,  color: "var(--bg-pink)", bgColor: "rgba(236, 72, 153, 0.1)" },
+        { id: 4, name: "Smart Contract", completed: 84,  total: 87,  color: "var(--bg-pink)", bgColor: "rgba(236, 72, 153, 0.1)" },
     ],
     footerText: "2 Changes in last 24hrs"
 };
