@@ -47,7 +47,14 @@
 }
 
 @layer base {
-  html { scroll-behavior: smooth; }
+  html { 
+    scroll-behavior: smooth; 
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* IE/Edge */
+  }
+  html::-webkit-scrollbar {
+    display: none; /* Chrome/Safari */
+  }
   body {
     background-color: var(--bg);
     color: var(--text);

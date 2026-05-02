@@ -20,7 +20,7 @@ export function HowItWorks() {
     return (
         <section id="how-it-works" ref={containerRef} className="relative w-full z-20">
             {/* Header */}
-            <div className="w-full bg-[var(--bg)] text-[var(--text)] px-8 py-32 md:py-48 flex flex-col items-center md:items-start justify-center text-center md:text-left border-b border-gray-200">
+            <div className="w-full bg-[var(--bg)] text-[var(--text)] px-8 py-32 md:py-48 flex flex-col items-center justify-center text-center border-b border-gray-200">
                 <motion.span 
                     initial={{ opacity: 0, y: 20 }}
                     whileInView={{ opacity: 1, y: 0 }}
@@ -39,6 +39,15 @@ export function HowItWorks() {
                 >
                     HOW IT<br/>WORKS.
                 </motion.h2>
+                <motion.span
+                    initial={{ opacity: 0 }}
+                    whileInView={{ opacity: 1 }}
+                    viewport={{ once: true }}
+                    transition={{ duration: 1, delay: 0.5 }}
+                    className="mt-6 font-mono text-[10px] uppercase tracking-[0.3em] opacity-40"
+                >
+                    From SMS Ingress to On-Chain Settlement
+                </motion.span>
             </div>
 
             {/* Overlapping Sticky Steps */}

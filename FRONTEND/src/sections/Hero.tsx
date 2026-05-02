@@ -24,14 +24,15 @@ export function Hero() {
         );
 
         gsap.to(heroRef.current.querySelector('.hero-bg-text'), {
-            y: 200,
+            y: 400,
             opacity: 0,
+            scale: 1.1,
             force3D: true,
             scrollTrigger: {
                 trigger: heroRef.current,
                 start: 'top top',
                 end: 'bottom top',
-                scrub: true
+                scrub: 1.5
             }
         });
     }, [])

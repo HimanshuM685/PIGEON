@@ -26,7 +26,7 @@ const testimonials = [
 export function Team() {
     return (
         <section id="team" className="relative z-10 w-full bg-[var(--bg-pink)] text-white">
-            <div className="w-full px-8 py-32 md:py-48 flex flex-col items-center md:items-start justify-center text-center md:text-left">
+            <div className="w-full px-8 py-32 md:py-48 flex flex-col items-center justify-center text-center">
                 <motion.span 
                     initial={{ opacity: 0, y: 20 }}
                     whileInView={{ opacity: 1, y: 0 }}
@@ -45,6 +45,15 @@ export function Team() {
                 >
                     THE<br/>VISIONARIES.
                 </motion.h2>
+                <motion.span
+                    initial={{ opacity: 0 }}
+                    whileInView={{ opacity: 1 }}
+                    viewport={{ once: true }}
+                    transition={{ duration: 1, delay: 0.5 }}
+                    className="mt-6 font-mono text-[10px] uppercase tracking-[0.3em] opacity-40 text-white"
+                >
+                    Building the Future of P2P Payments
+                </motion.span>
                 
                 <div className="w-full mt-24">
                     <CircularTestimonials testimonials={testimonials} autoplay={false} />

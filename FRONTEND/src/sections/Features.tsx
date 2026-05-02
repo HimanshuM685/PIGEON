@@ -1,17 +1,17 @@
 'use client';
 
 import {
-    Send, Wallet, History, Brain, KeyRound,
-    Smartphone, Shield,
+    Send, Wallet, MessageCircle, Brain, KeyRound,
+    Smartphone, Shield, SendHorizontal
 } from 'lucide-react'
 import { motion, useReducedMotion } from 'motion/react'
 
 const features = [
-    { title: 'Send via SMS',        icon: Send,       description: 'Transfer ALGO and ASAs via text.', className: 'col-span-12 md:col-span-8 bg-dark-ink text-white p-12 md:p-20' },
+    { title: 'Send via SMS',        icon: MessageCircle,   description: 'Transfer ALGO and ASAs via text.', className: 'col-span-12 md:col-span-8 bg-dark-ink text-white p-12 md:p-20' },
     { title: 'Post-Quantum',        icon: Shield,     description: 'Quantum-resistant Falcon signatures.', className: 'col-span-12 md:col-span-4 bg-vibrant-yellow text-[var(--text)] p-12' },
     { title: 'AI Intent',           icon: Brain,      description: 'NLP parsing for SMS commands.', className: 'col-span-12 md:col-span-4 bg-[var(--bg-pink)] text-white p-12' },
     { title: 'Check Balance',       icon: Wallet,     description: 'Text "balance" anytime.', className: 'col-span-12 md:col-span-4 bg-white text-[var(--text)] p-12 border border-gray-200' },
-    { title: 'Txn History',         icon: History,    description: 'Review past transactions via SMS.', className: 'col-span-12 md:col-span-4 bg-[var(--bg-blue)] text-white p-12' },
+    { title: 'Send via Telegram',   icon: SendHorizontal, description: 'Using Telegram bot.', className: 'col-span-12 md:col-span-4 bg-[var(--bg-blue)] text-white p-12' },
     { title: 'Encrypted Keys',      icon: KeyRound,   description: 'AES-encrypted mnemonics stored on-chain.', className: 'col-span-12 md:col-span-6 bg-dark-ink text-white p-12 md:p-20' },
     { title: 'Phone Wallets',       icon: Smartphone, description: 'Your number IS your wallet.', className: 'col-span-12 md:col-span-6 bg-[var(--bg-purple)] text-white p-12 md:p-20' },
 ]
@@ -23,7 +23,7 @@ export function Features() {
             <div className="grid grid-cols-12 gap-0 w-full">
                 
                 {/* Massive Header Block */}
-                <div className="col-span-12 bg-white text-[var(--text)] px-8 py-32 md:py-48 flex flex-col items-center md:items-start justify-center text-center md:text-left border-b border-gray-200">
+                <div className="col-span-12 bg-white text-[var(--text)] px-8 py-32 md:py-48 flex flex-col items-center justify-center text-center border-b border-gray-200">
                     <motion.span 
                         initial={{ opacity: 0, y: 20 }}
                         whileInView={{ opacity: 1, y: 0 }}
@@ -42,6 +42,15 @@ export function Features() {
                     >
                         EVERYTHING<br/>YOU NEED.
                     </motion.h2>
+                    <motion.span
+                        initial={{ opacity: 0 }}
+                        whileInView={{ opacity: 1 }}
+                        viewport={{ once: true }}
+                        transition={{ duration: 1, delay: 0.5 }}
+                        className="mt-6 font-mono text-[10px] uppercase tracking-[0.3em] opacity-40 text-dark-ink"
+                    >
+                        Comprehensive Toolset for Modern Finance
+                    </motion.span>
                 </div>
 
                 {/* Grid Blocks */}
