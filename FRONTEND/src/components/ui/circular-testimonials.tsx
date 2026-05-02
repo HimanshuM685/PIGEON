@@ -6,7 +6,7 @@ import React, {
     useMemo,
     useCallback,
 } from "react";
-import { ArrowLeft, ArrowRight } from "lucide-react";
+import { ArrowLeft, ArrowRight, Github, Twitter, Globe, Mail } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 
 interface Testimonial {
@@ -15,6 +15,12 @@ interface Testimonial {
     designation: string;
     src: string;
     objectPosition?: string;
+    socials?: {
+        github?: string;
+        twitter?: string;
+        website?: string;
+        email?: string;
+    };
 }
 interface Colors {
     name?: string;
@@ -235,11 +241,34 @@ export const CircularTestimonials = ({
                                     </motion.span>
                                 ))}
                             </motion.p>
+                            {/* Social Links */}
+                            <div className="flex items-center justify-center gap-6 mt-8">
+                                {activeTestimonial.socials?.github && (
+                                    <a href={activeTestimonial.socials.github} target="_blank" rel="noopener noreferrer" className="opacity-60 hover:opacity-100 transition-opacity transform hover:scale-110">
+                                        <Github size={24} color={colorDesignation} />
+                                    </a>
+                                )}
+                                {activeTestimonial.socials?.twitter && (
+                                    <a href={activeTestimonial.socials.twitter} target="_blank" rel="noopener noreferrer" className="opacity-60 hover:opacity-100 transition-opacity transform hover:scale-110">
+                                        <Twitter size={24} color={colorDesignation} />
+                                    </a>
+                                )}
+                                {activeTestimonial.socials?.website && (
+                                    <a href={activeTestimonial.socials.website} target="_blank" rel="noopener noreferrer" className="opacity-60 hover:opacity-100 transition-opacity transform hover:scale-110">
+                                        <Globe size={24} color={colorDesignation} />
+                                    </a>
+                                )}
+                                {activeTestimonial.socials?.email && (
+                                    <a href={activeTestimonial.socials.email} className="opacity-60 hover:opacity-100 transition-opacity transform hover:scale-110">
+                                        <Mail size={24} color={colorDesignation} />
+                                    </a>
+                                )}
+                            </div>
                         </motion.div>
                     </AnimatePresence>
-                    <div className="flex items-center gap-4 mt-8 z-10 relative">
+                    <div className="flex items-center justify-center gap-6 mt-12 z-10 relative">
                         <button
-                            className="p-3 rounded-full transition-all duration-300 hover:scale-110 shadow-lg"
+                            className="p-4 rounded-full transition-all duration-300 hover:scale-110 shadow-lg"
                             onClick={handlePrev}
                             style={{
                                 backgroundColor: hoverPrev ? colorArrowHoverBg : colorArrowBg,
@@ -248,10 +277,10 @@ export const CircularTestimonials = ({
                             onMouseLeave={() => setHoverPrev(false)}
                             aria-label="Previous testimonial"
                         >
-                            <ArrowLeft size={22} color={colorArrowFg} />
+                            <ArrowLeft size={28} color={colorArrowFg} />
                         </button>
                         <button
-                            className="p-3 rounded-full transition-all duration-300 hover:scale-110 shadow-lg"
+                            className="p-4 rounded-full transition-all duration-300 hover:scale-110 shadow-lg"
                             onClick={handleNext}
                             style={{
                                 backgroundColor: hoverNext ? colorArrowHoverBg : colorArrowBg,
@@ -260,7 +289,7 @@ export const CircularTestimonials = ({
                             onMouseLeave={() => setHoverNext(false)}
                             aria-label="Next testimonial"
                         >
-                            <ArrowRight size={22} color={colorArrowFg} />
+                            <ArrowRight size={28} color={colorArrowFg} />
                         </button>
                     </div>
                 </div>

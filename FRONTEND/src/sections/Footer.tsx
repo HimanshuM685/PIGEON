@@ -1,4 +1,4 @@
-import { Github, ExternalLink } from 'lucide-react'
+import { Github, ExternalLink, Twitter } from 'lucide-react'
 
 export function Footer() {
     return (
@@ -11,16 +11,9 @@ export function Footer() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-10 md:gap-8">
                     {/* Brand */}
                     <div className="sm:col-span-2 md:col-span-2">
-                        <div className="flex items-center gap-2 mb-5">
-                            <svg width="24" height="24" viewBox="0 0 64 64" fill="none">
-                                <polygon points="8,44 24,20 40,28 32,48"  fill="#F2F2DF"/>
-                                <polygon points="24,20 48,14 40,28"        fill="#B7B0F3"/>
-                                <polygon points="24,20 34,10 40,18 32,26" fill="#F2F2DF"/>
-                                <polygon points="34,10 44,8 38,16"         fill="#FFDD7C"/>
-                                <circle  cx="35" cy="16" r="2.5"           fill="#FFDD7C"/>
-                                <polygon points="8,44 4,54 16,46"          fill="#5158A6"/>
-                            </svg>
-                            <span className="font-display font-bold text-lg tracking-[0.15em] uppercase text-[#F2F2DF]">Pigeon</span>
+                        <div className="flex items-center gap-3 mb-5">
+                            <img src="/favicon.svg" alt="Pigeon Logo" width="28" height="28" className="drop-shadow-md" />
+                            <span className="editorial-heading text-xl tracking-[0.05em] uppercase text-[#F2F2DF]">Pigeon</span>
                         </div>
                         <p className="text-[13px] text-[rgba(242,242,223,0.6)] leading-relaxed mb-6 max-w-[260px]">
                             Peer Integrated Gateway for Encrypted On-chain Network
@@ -68,15 +61,15 @@ export function Footer() {
                         <h4 className="text-[10px] font-semibold tracking-[0.2em] uppercase mb-6 text-[rgba(242,242,223,0.5)] font-mono">Connect</h4>
                         <ul className="space-y-3.5">
                             <li>
-                                <a href="https://github.com/HimanshuM685/PIGEON" target="_blank" rel="noopener noreferrer"
+                                <a href="https://x.com/pigeon_hq" target="_blank" rel="noopener noreferrer"
                                     className="text-[13px] text-[rgba(242,242,223,0.7)] hover:text-[var(--bg-yellow)] transition-colors duration-200 inline-flex items-center gap-1.5">
-                                    <Github size={12} className="opacity-60" /> GitHub
+                                    <Twitter size={12} className="opacity-60" /> PIGEON
                                 </a>
                             </li>
                             <li>
-                                <a href="https://testnet.explorer.perawallet.app/" target="_blank" rel="noopener noreferrer"
+                                <a href="https://x.com/calluspiper" target="_blank" rel="noopener noreferrer"
                                     className="text-[13px] text-[rgba(242,242,223,0.7)] hover:text-[var(--bg-yellow)] transition-colors duration-200 inline-flex items-center gap-1.5">
-                                    <ExternalLink size={12} className="opacity-60" /> Algo Explorer
+                                    <Twitter size={12} className="opacity-60" /> PiedPiper
                                 </a>
                             </li>
                         </ul>

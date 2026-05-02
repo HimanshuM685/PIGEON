@@ -3,23 +3,41 @@ import { motion } from 'motion/react';
 
 const testimonials = [
   {
-    name: 'Real Ratnadwip',
-    designation: 'PIGEON Founder',
-    quote: "We're not just building a wallet, we're building the future of financial inclusion. PIGEON is designed to be accessible to anyone, anywhere.",
-    src: '/team/ratnadwip.jpg',
-  },
-  {
-    name: 'Himanshu M.',
-    designation: 'Lead Engineer',
-    quote: "Integrating post-quantum Falcon signatures on Algorand through an SMS interface was challenging, but the result is a perfectly secure, seamless experience.",
+    name: 'Himanshu Malik',
+    designation: 'Lead Engineer & Architect',
+    quote: "Designed and implemented the core blockchain integration, including smart contract development and system architecture.",
     src: '/team/himanshu.jpg',
+    socials: {
+      github: 'https://github.com/HimanshuM685',
+      twitter: 'https://x.com/HimanshuM685',
+      website: 'https://himanshum.com/',
+      email: 'mailto:hello@himanshum.com',
+    },
   },
   {
     name: 'Koushik Mondal',
-    designation: 'Frontend Engineer',
-    quote: "Designing a seamless and engaging user interface was critical. We wanted the experience to feel magical, blending advanced technology with intuitive design.",
+    designation: 'Frontend Developer',
+    quote: "Developed the user interface, focusing on performance, responsiveness, and seamless user experience.",
     src: '/team/koushik.jpeg',
     objectPosition: 'top',
+    socials: {
+      github: 'https://github.com/Koushikmondal06',
+      twitter: 'https://x.com/Koushikmondal69',
+      website: 'https://002014.xyz/',
+      email: 'mailto:koushik@002014.xyz',
+    },
+  },
+  {
+    name: 'Ratnadwip Sarkar',
+    designation: 'Design & Strategy',
+    quote: "Led product design and strategic direction, shaping user experience and overall system vision.",
+    src: '/team/ratnadwip.jpg',
+    socials: {
+      github: 'https://github.com/RealRatnadwip',
+      twitter: 'https://x.com/useridwas_taken',
+      website: 'https://002014.xyz/',
+      email: 'mailto:me@ratnadwip.com',
+    },
   },
 ];
 

@@ -8,6 +8,7 @@ const navLinks = [
     { label: 'Architecture', href: '#architecture' },
     { label: 'Team',         href: '#team' },
     { label: 'Waitlist',     href: '#waitlist' },
+    { label: 'Docs',         href: '#documentation' },
 ]
 
 export function Navbar() {
