@@ -56,3 +56,43 @@ export async function insertWaitlistEmail(email: string) {
         throw toDatabaseError(error)
     }
 }
+
+import { type StatsData } from '../sections/ProgressStats';
+
+export async function getDevelopmentStats(): Promise<StatsData | null> {
+    try {
+        const rows = await sql`
+            SELECT data
+            FROM public.pigeon_stats
+            WHERE id = 1
+        `;
+        if (rows.length > 0 && rows[0].data) {
+            return rows[0].data as StatsData;
+        }
+        return null;
+    } catch (error) {
+        console.error('Failed to get stats from database:', error);
+        return null;
+    }
+}
+
+export async function updateDevelopmentStats(data: StatsData): Promise<void> {
+    try {
+        // Ensure table exists
+        await sql`
+            CREATE TABLE IF NOT EXISTS public.pigeon_stats (
+                id INT PRIMARY KEY,
+                data JSONB NOT NULL
+            )
+        `;
+        
+        await sql`
+            INSERT INTO public.pigeon_stats (id, data)
+            VALUES (1, ${JSON.stringify(data)}::jsonb)
+            ON CONFLICT (id) DO UPDATE SET data = EXCLUDED.data
+        `;
+    } catch (error) {
+        console.error('Failed to update stats in database:', error);
+        throw toDatabaseError(error);
+    }
+}

@@ -22,7 +22,7 @@
 - An **Algorand TestNet** admin wallet (25-word mnemonic) — you'll need this to fund users and write to the contract
 - A **deployed ContractPigeon** smart contract (get the App ID after deploying)
 - A Telegram bot token from [@BotFather](https://t.me/BotFather)
-- *(Optional)* An [httpSMS](https://httpsms.com) account for SMS gateway
+- *(Optional)* A [SMSGate](https://sms-gate.app/) account for SMS gateway
 
 ### 1. Clone & install
 
@@ -52,9 +52,10 @@ ALGOD_SERVER=https://testnet-api.algonode.cloud
 # Telegram Bot (optional — skip to run SMS-only) ────
 TELEGRAM_BOT_TOKEN=your_token_from_botfather
 
-# SMS via httpSMS (optional) ────────────────────────
-HTTPSMS_API_KEY=your_key
-HTTPSMS_OWNER_PHONE=+1XXXXXXXXXX
+# SMS via SMSGate (optional) ────────────────────────
+SMSGATE_BASE_URL=https://api.sms-gate.app
+SMSGATE_USERNAME=your_username
+SMSGATE_PASSWORD=your_password
 ```
 
 ### 3. Start
@@ -118,7 +119,7 @@ The backend also exposes a REST API:
 
 | Endpoint | Description |
 |---|---|
-| `POST /api/sms-webhook` | For **httpSMS Android App** (CloudEvents format webhook) |
+| `POST /api/sms-webhook` | For **SMSGate Android App** (sms:received webhook) |
 | `POST /api/esp32-sms-webhook` | For **ESP32 Hardware** (SIM800L webhook) |
 | `POST /api/pq-wallet/*` | For **External Apps/Integrations** (Post-quantum operations) |
 | `GET /api/webhook-health` | For **Uptime Monitoring** (Health check) |

@@ -6,36 +6,33 @@ import { getAddress } from './address';
 import { onboardUser } from './onboard';
 import { fundUser } from './fund';
 import { getTransactions } from './transactions';
+import { createLinkRequest, verifyOtp, hasPendingLink } from './linkOtp';
 
-// ─── httpSMS CloudEvents Payload Types ───────────────────────────────────────
+// ─── SMSGate Webhook Payload Types ──────────────────────────────────────────
 
-export interface HttpSmsEventData {
-  contact: string;       // sender phone (incoming) or recipient (outgoing)
-  content: string;       // SMS body text
-  message_id?: string;
-  id?: string;           // present on outgoing events
-  owner: string;         // your httpSMS phone number
-  request_id?: string;
-  sim?: string;          // SIM1 or SIM2
-  timestamp: string;
-  user_id: string;
+/**
+ * SMSGate webhook envelope — wraps all events.
+ * @see https://docs.sms-gate.app/getting-started/webhooks/
+ */
+export interface SmsGateWebhookEnvelope {
+  deviceId: string;       // Device ID (e.g. "ffffffffceb0b1db0000018e937c815b")
+  event: string;          // Event type (e.g. "sms:received")
+  id: string;             // Unique event/message ID
+  payload: SmsGateReceivedPayload;
+  webhookId: string;      // Webhook registration ID
 }
 
-export interface HttpSmsEvent {
-  data: HttpSmsEventData;
-  datacontenttype: string;
-  id: string;
-  source: string;
-  specversion: string;
-  time: string;
-  type:
-  | 'message.phone.received'
-  | 'message.phone.sent'
-  | 'message.phone.delivered'
-  | 'message.send.failed'
-  | 'message.send.expired'
-  | 'message.call.missed'
-  | string;
+/**
+ * Inner payload for sms:received events.
+ */
+export interface SmsGateReceivedPayload {
+  messageId: string;      // Content-based ID
+  message: string;        // SMS content text
+  sender: string;         // Sender phone number
+  recipient?: string;     // Device phone number (may be null)
+  phoneNumber?: string;   // Deprecated — use sender
+  simNumber?: number;     // SIM index (nullable)
+  receivedAt: string;     // Local ISO 8601 timestamp
 }
 
 export interface WebhookResponse {
@@ -44,68 +41,118 @@ export interface WebhookResponse {
   data?: any;
 }
 
-// ─── httpSMS Send API ────────────────────────────────────────────────────────
+// ─── SMSGate Send API ───────────────────────────────────────────────────────
 
-const HTTPSMS_API_BASE_URL = process.env.HTTPSMS_API_BASE_URL || 'https://api.httpsms.com';
-const HTTPSMS_API_URL = `${HTTPSMS_API_BASE_URL.replace(/\/+$/, '')}/v1/messages/send`;
-const HTTPSMS_MAX_CONTENT_LENGTH = 2048;
+const SMSGATE_BASE_URL = (process.env.SMSGATE_BASE_URL || 'https://api.sms-gate.app').replace(/\/+$/, '');
+const SMSGATE_SEND_URL = `${SMSGATE_BASE_URL}/3rdparty/v1/messages`;
+const SMSGATE_MAX_CONTENT_LENGTH = 65535;
+
+// ─── Concurrency Limiter (supports 3–5 simultaneous SMS sessions) ───────────
+
+const MAX_CONCURRENT_SMS = 5;
+
+class Semaphore {
+  private running = 0;
+  private queue: Array<() => void> = [];
+
+  constructor(private readonly max: number) {}
+
+  async acquire(): Promise<void> {
+    if (this.running < this.max) {
+      this.running++;
+      return;
+    }
+    return new Promise<void>((resolve) => {
+      this.queue.push(() => { this.running++; resolve(); });
+    });
+  }
+
+  release(): void {
+    this.running--;
+    const next = this.queue.shift();
+    if (next) next();
+  }
+
+  get activeCount(): number { return this.running; }
+  get waitingCount(): number { return this.queue.length; }
+}
+
+const smsSemaphore = new Semaphore(MAX_CONCURRENT_SMS);
 
 /**
- * Send an SMS reply through the httpSMS API.
- * Requires HTTPSMS_API_KEY and HTTPSMS_OWNER_PHONE env vars.
+ * Build the Basic Auth header value from SMSGate username + password.
  */
-async function sendSmsViaHttpSms(to: string, content: string): Promise<{ success: boolean; error?: string }> {
-  const apiKey = process.env.HTTPSMS_API_KEY;
-  const ownerPhone = process.env.HTTPSMS_OWNER_PHONE;
+function getSmsGateAuthHeader(): string | null {
+  const username = process.env.SMSGATE_USERNAME;
+  const password = process.env.SMSGATE_PASSWORD;
+  if (!username || !password) return null;
+  const encoded = Buffer.from(`${username}:${password}`).toString('base64');
+  return `Basic ${encoded}`;
+}
 
-  if (!apiKey || !ownerPhone) {
-    console.warn('httpSMS API key or owner phone not configured — skipping SMS reply');
-    return { success: false, error: 'HTTPSMS_API_KEY or HTTPSMS_OWNER_PHONE not set' };
+/**
+ * Send an SMS reply through the SMSGate API.
+ * Requires SMSGATE_USERNAME and SMSGATE_PASSWORD env vars.
+ */
+async function sendSmsViaSmsGate(to: string, content: string): Promise<{ success: boolean; error?: string }> {
+  const authHeader = getSmsGateAuthHeader();
+
+  if (!authHeader) {
+    console.warn('SMSGate username or password not configured — skipping SMS reply');
+    return { success: false, error: 'SMSGATE_USERNAME or SMSGATE_PASSWORD not set' };
   }
 
   try {
     const safeContent =
-      content.length > HTTPSMS_MAX_CONTENT_LENGTH
-        ? `${content.slice(0, HTTPSMS_MAX_CONTENT_LENGTH - 20)}\n...[truncated]`
+      content.length > SMSGATE_MAX_CONTENT_LENGTH
+        ? `${content.slice(0, SMSGATE_MAX_CONTENT_LENGTH - 20)}\n...[truncated]`
         : content;
 
-    const res = await fetch(HTTPSMS_API_URL, {
+    const res = await fetch(SMSGATE_SEND_URL, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'x-api-key': apiKey,
+        'Authorization': authHeader,
       },
       body: JSON.stringify({
-        content: safeContent,
-        from: ownerPhone,
-        to,
+        phoneNumbers: [to],
+        message: safeContent,
+        ...(process.env.SMSGATE_DEVICE_ID && { deviceId: process.env.SMSGATE_DEVICE_ID }),
       }),
     });
 
     if (!res.ok) {
       const body = await res.text();
-      console.error(`httpSMS send failed (${res.status}):`, body);
-      return { success: false, error: `httpSMS API ${res.status}: ${body}` };
+      console.error(`SMSGate send failed (${res.status}):`, body);
+      return { success: false, error: `SMSGate API ${res.status}: ${body}` };
     }
 
     const json = await res.json();
-    console.log('httpSMS reply sent successfully:', json);
+    console.log('SMSGate reply sent successfully:', json);
     return { success: true };
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
-    console.error('httpSMS send error:', msg);
+    console.error('SMSGate send error:', msg);
     return { success: false, error: msg };
   }
 }
 
+/**
+ * Public export of sendSmsViaSmsGate for use by other modules
+ * (e.g. telegramBot.ts needs to send OTPs via SMS).
+ */
+export { sendSmsViaSmsGate as sendSmsViaSmsGateExport };
+
 // ─── Pending Sessions (two-step password flow) ─────────────────────────────
 
 interface PendingSession {
-  action: 'send' | 'onboard' | 'get_pvt_key';
+  action: 'send' | 'onboard' | 'get_pvt_key' | 'link_otp_verify';
   /** Send params (only for 'send') */
   sendParams?: { amount: string; asset?: string; to: string };
   /** Optional: imported mnemonic for onboarding */
   onboardMnemonic?: string;
+  /** Link target for OTP verification */
+  linkTarget?: string;
   createdAt: number;
 }
 
@@ -140,11 +187,13 @@ function getCommandMenuReply(): string {
     '• "fund me" — request testnet funds',
     '• "get pvt key" — export recovery phrase',
     '• "get txn" — show last 5 transactions',
+    '• "link @tghandle" — link your Telegram account',
+    '• "link +919XXXXXXXXX" — link another phone number',
   ].join('\n');
 }
 
 /**
- * Process an incoming SMS from httpSMS webhook, classify intent via OpenRouter,
+ * Process an incoming SMS from SMSGate webhook, classify intent via OpenRouter,
  * execute the action, and return a human-readable reply.
  *
  * Two-step flow for send & onboard:
@@ -200,6 +249,9 @@ async function processIncomingSms(from: string, message: string): Promise<SmsPro
     }
     if (pending.action === 'get_pvt_key') {
       return await executeGetPvtKey(from, password);
+    }
+    if (pending.action === 'link_otp_verify') {
+      return await executeLinkOtpVerify(from, password, pending.linkTarget);
     }
 
     return { reply: '!!! Something went wrong with the pending session. Please try again.', containedPassword: false };
@@ -313,6 +365,62 @@ async function processIncomingSms(from: string, message: string): Promise<SmsPro
         };
       }
 
+      case 'link': {
+        const linkTarget = intentResult.params.linkTarget ?? '';
+        if (!linkTarget) {
+          return { reply: '!!! Missing target. Use: link @tghandle or link +919XXXXXXXXX', containedPassword: false };
+        }
+
+        if (linkTarget.startsWith('@')) {
+          // SMS user wants to link their Telegram account
+          // Generate OTP → send to Telegram → user verifies by replying OTP via SMS
+          const handle = linkTarget.slice(1);
+          const otp = createLinkRequest('sms', normPhone, handle);
+
+          // Try to send OTP to the Telegram user
+          const { sendTelegramOtp } = await import('./telegramBot');
+          const sent = await sendTelegramOtp(handle, otp, from);
+          if (!sent) {
+            return {
+              reply: `!!! Could not send OTP to ${linkTarget}. They must have interacted with the PIGEON bot first.`,
+              containedPassword: false,
+            };
+          }
+
+          // Set up pending session to await OTP reply
+          pendingSessions.set(normPhone, {
+            action: 'link_otp_verify',
+            linkTarget: handle,
+            createdAt: Date.now(),
+          });
+
+          return {
+            reply: `OTP sent to ${linkTarget} on Telegram.\nReply with the 6-digit code to confirm linking:`,
+            containedPassword: false,
+          };
+        }
+
+        if (linkTarget.startsWith('+')) {
+          // SMS user wants to link another phone number (less common, but supported)
+          return {
+            reply: '!!! Phone-to-phone linking is not supported via SMS. Use Telegram to link a phone number.',
+            containedPassword: false,
+          };
+        }
+
+        return { reply: '!!! Invalid link target. Use: link @tghandle', containedPassword: false };
+      }
+
+      case 'verify_otp': {
+        // User sent a 6-digit OTP — check if there's a pending link for this phone
+        const otpCode = intentResult.params.password ?? '';
+        if (hasPendingLink(normPhone)) {
+          return await executeLinkOtpVerify(from, otpCode);
+        }
+        // No pending link — treat as unknown (might be a password for something else)
+        return { reply: `?? Could not understand your request.\n\n${getCommandMenuReply()}`, containedPassword: false };
+      }
+
       default:
         return { reply: `?? Could not understand your request.\n\n${getCommandMenuReply()}`, containedPassword: false };
     }
@@ -389,65 +497,73 @@ async function executeGetPvtKey(from: string, password: string): Promise<SmsProc
   }
 }
 
-// ─── JWT Validation (optional) ──────────────────────────────────────────────
+async function executeLinkOtpVerify(
+  from: string,
+  otpAttempt: string,
+  _linkTarget?: string
+): Promise<SmsProcessResult> {
+  const normPhone = normalizeSessionPhone(from);
+  const result = verifyOtp(normPhone, otpAttempt);
 
-/**
- * Validate the httpSMS webhook JWT signature.
- * If HTTPSMS_WEBHOOK_SIGNING_KEY is not set, validation is skipped.
- */
-function validateWebhookSignature(authHeader: string | undefined): boolean {
-  const signingKey = process.env.HTTPSMS_WEBHOOK_SIGNING_KEY;
-
-  // If no signing key configured, skip validation (dev mode)
-  if (!signingKey) {
-    return true;
+  if (!result) {
+    return {
+      reply: '!!! Invalid or expired OTP. Please start the link process again with "link @tghandle".',
+      containedPassword: false,
+    };
   }
 
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    console.warn('Webhook missing Authorization Bearer token');
-    return false;
-  }
-
+  // OTP verified — execute the link
   try {
-    const token = authHeader.slice(7);
-    // Decode JWT parts (header.payload.signature)
-    const parts = token.split('.');
-    if (parts.length !== 3) {
-      console.warn('Invalid JWT format');
-      return false;
+    const { linkTelegramToPhone, findUserByTelegramId } = await import('./onchain');
+
+    if (result.sourceChannel === 'sms') {
+      // SMS user linking their Telegram: we need to find the TG user's ID from the handle
+      // The Telegram bot should have stored the chat ID when sending the OTP
+      const { getTelegramChatIdByHandle } = await import('./telegramBot');
+      const tgChatId = getTelegramChatIdByHandle(result.targetIdentity);
+
+      if (!tgChatId) {
+        return {
+          reply: `!!! Could not complete linking — @${result.targetIdentity} not found in bot records.`,
+          containedPassword: false,
+        };
+      }
+
+      await linkTelegramToPhone(tgChatId, from, result.targetIdentity);
+      return {
+        reply: `✅ Successfully linked your SMS account to Telegram @${result.targetIdentity}!`,
+        containedPassword: false,
+      };
     }
 
-    // Verify HMAC-SHA256 signature
-    const crypto = require('crypto');
-    const signatureInput = `${parts[0]}.${parts[1]}`;
-    const expectedSig = crypto
-      .createHmac('sha256', signingKey)
-      .update(signatureInput)
-      .digest('base64url');
-
-    if (expectedSig !== parts[2]) {
-      console.warn('JWT signature mismatch');
-      return false;
+    if (result.sourceChannel === 'telegram') {
+      // Telegram user linked a phone — this OTP came via SMS
+      await linkTelegramToPhone(result.sourceIdentity, from, '');
+      return {
+        reply: `✅ Successfully linked your phone ${from} to your Telegram account!`,
+        containedPassword: false,
+      };
     }
 
-    // Check token expiry
-    const payload = JSON.parse(Buffer.from(parts[1], 'base64url').toString());
-    if (payload.exp && Date.now() / 1000 > payload.exp) {
-      console.warn('JWT token expired');
-      return false;
-    }
-
-    return true;
+    return { reply: '!!! Unknown link channel.', containedPassword: false };
   } catch (err) {
-    console.error('JWT validation error:', err);
-    return false;
+    const msg = err instanceof Error ? err.message : String(err);
+    return {
+      reply: `!!! Link failed: ${msg}`,
+      containedPassword: false,
+    };
   }
 }
+
+// ─── Webhook Auth (no-op for now) ───────────────────────────────────────────
+// SMSGate sends webhooks directly from the device, it does NOT forward our
+// Basic Auth credentials. If you need webhook auth, configure a signing_key
+// via the SMSGate settings API. For now we accept all incoming webhooks.
 
 // ─── Route Setup ────────────────────────────────────────────────────────────
 
 /**
- * Mount httpSMS webhook routes on the Express app.
+ * Mount SMSGate webhook routes on the Express app.
  */
 export function setupWebhookRoutes(app: express.Express): void {
 
@@ -455,54 +571,57 @@ export function setupWebhookRoutes(app: express.Express): void {
   const processedEvents = new Set<string>();
   const DEDUP_TTL_MS = 5 * 60 * 1000; // keep IDs for 5 minutes
 
-  const handleHttpSmsWebhook = async (req: express.Request, res: express.Response) => {
+  const handleSmsGateWebhook = async (req: express.Request, res: express.Response) => {
     try {
       console.log(
-        `[httpSMS] Webhook hit path=${req.path} content-type=${req.headers['content-type'] ?? 'unknown'}`
+        `[SMSGate] Webhook hit path=${req.path} content-type=${req.headers['content-type'] ?? 'unknown'}`
       );
 
-      const payload = req.body as Record<string, unknown>;
+      const body = req.body as Record<string, unknown>;
 
-      let eventType = 'message.phone.received';
-      let eventId = '';
+      // Log raw payload for debugging
+      console.log('[SMSGate] Raw payload:', JSON.stringify(body, null, 2));
+
       let senderPhone = '';
       let smsContent = '';
-      let ownerPhone = '';
+      let eventId = '';
 
-      if (payload?.type && payload?.data && typeof payload.data === 'object') {
-        const event = payload as unknown as HttpSmsEvent;
-        eventType = event.type;
-        eventId = event.id ?? '';
-        senderPhone = event.data.contact ?? '';
-        smsContent = event.data.content ?? '';
-        ownerPhone = event.data.owner ?? '';
-      } else if (typeof payload?.contact === 'string' && typeof payload?.content === 'string') {
-        eventType = typeof payload.type === 'string' ? payload.type : 'message.phone.received';
-        eventId = typeof payload.id === 'string' ? payload.id : '';
-        senderPhone = payload.contact;
-        smsContent = payload.content;
-        ownerPhone = typeof payload.owner === 'string' ? payload.owner : '';
-        console.warn('[httpSMS] Received non-CloudEvents payload; accepted via fallback parser');
+      // ── SMSGate webhook sends an envelope: { deviceId, event, id, payload: {...}, webhookId }
+      const envelope = body as Partial<SmsGateWebhookEnvelope>;
+
+      if (envelope.event && envelope.payload && typeof envelope.payload === 'object') {
+        // Standard envelope format
+        const p = envelope.payload;
+        senderPhone = p.sender || p.phoneNumber || '';
+        smsContent = p.message || '';
+        eventId = envelope.id || p.messageId || '';
+
+        if (envelope.event !== 'sms:received') {
+          console.log(`[SMSGate] Ignoring non-sms:received event: ${envelope.event}`);
+          return res.status(200).json({
+            success: true,
+            message: `Event ${envelope.event} acknowledged but not processed`,
+          });
+        }
+      } else if (typeof body?.sender === 'string' && (typeof body?.message === 'string' || typeof body?.contentPreview === 'string')) {
+        // Flat payload fallback (e.g. direct IncomingMessage without envelope)
+        senderPhone = body.sender as string;
+        smsContent = (body.message || body.contentPreview) as string;
+        eventId = typeof body.id === 'string' ? body.id : (typeof body.messageId === 'string' ? body.messageId as string : '');
+        console.warn('[SMSGate] Received flat payload (no envelope wrapper)');
       } else {
+        console.error('[SMSGate] Unrecognized payload format:', JSON.stringify(body));
         return res.status(400).json({
           success: false,
-          error: 'Invalid payload: expected CloudEvents or { contact, content } format',
+          error: 'Invalid payload: expected SMSGate webhook envelope { deviceId, event, id, payload: { message, sender, ... } }',
         });
       }
 
-      // Validate webhook signature (if signing key is configured)
-      if (!validateWebhookSignature(req.headers.authorization)) {
-        return res.status(401).json({
-          success: false,
-          error: 'Invalid webhook signature',
-        });
-      }
-
-      console.log(`[httpSMS] Event received: ${eventType} | id=${eventId || 'n/a'}`);
+      console.log(`[SMSGate] Event received: sms:received | id=${eventId || 'n/a'}`);
 
       // ── Deduplicate: skip if we already processed this event ID ─────────
       if (eventId && processedEvents.has(eventId)) {
-        console.log(`[httpSMS] Duplicate event ignored: ${eventId}`);
+        console.log(`[SMSGate] Duplicate event ignored: ${eventId}`);
         return res.status(200).json({
           success: true,
           message: `Duplicate event ${eventId} ignored`,
@@ -513,23 +632,14 @@ export function setupWebhookRoutes(app: express.Express): void {
         setTimeout(() => processedEvents.delete(eventId), DEDUP_TTL_MS);
       }
 
-      // ── Only process incoming SMS ───────────────────────────────────────
-      if (eventType !== 'message.phone.received' && eventType !== 'message.received') {
-        console.log(`[httpSMS] Acknowledged non-received event: ${eventType}`);
-        return res.status(200).json({
-          success: true,
-          message: `Event ${eventType} acknowledged`,
-        });
-      }
-
       if (!senderPhone || !smsContent) {
         return res.status(400).json({
           success: false,
-          error: 'Missing data.contact or data.content in received event',
+          error: 'Missing sender or contentPreview in received event',
         });
       }
 
-      console.log(`[httpSMS] Incoming SMS from ${senderPhone} to ${ownerPhone}: "${smsContent}"`);
+      console.log(`[SMSGate] Incoming SMS from ${senderPhone}: "${smsContent}"`);
 
       // --- SKIP MECHANISM ---
       // Automatically skip service/promotional SMS (alphanumeric sender IDs like "ADIGKS", "VK-SBI")
@@ -537,49 +647,56 @@ export function setupWebhookRoutes(app: express.Express): void {
       const isServiceSms = /[a-zA-Z]/.test(senderPhone);
       
       if (isServiceSms) {
-        console.log(`[httpSMS] Skipping SMS from service sender: ${senderPhone}`);
+        console.log(`[SMSGate] Skipping SMS from service sender: ${senderPhone}`);
         return res.status(200).json({
           success: true,
           message: `SMS from ${senderPhone} skipped`
         });
       }
 
-      // Process intent and generate reply
-      const { reply: replyText, containedPassword } = await processIncomingSms(senderPhone, smsContent);
-      console.log(`[httpSMS] Reply to ${senderPhone}: "${replyText}"`);
+      // ── Acquire semaphore slot (limits to MAX_CONCURRENT_SMS parallel sessions) ──
+      console.log(`[SMSGate] Concurrency: ${smsSemaphore.activeCount}/${MAX_CONCURRENT_SMS} active, ${smsSemaphore.waitingCount} queued`);
+      await smsSemaphore.acquire();
 
-      // Send reply back via httpSMS API
-      const sendResult = await sendSmsViaHttpSms(senderPhone, replyText);
+      try {
+        // Process intent and generate reply
+        const { reply: replyText, containedPassword } = await processIncomingSms(senderPhone, smsContent);
+        console.log(`[SMSGate] Reply to ${senderPhone}: "${replyText}"`);
 
-      // If the user's SMS contained a password, send a follow-up security warning
-      if (containedPassword) {
-        const securityWarning = '## SECURITY WARNING: Your previous message contained your password in plain text. Please DELETE it from your message history immediately for your safety.';
-        // Small delay so the warning arrives as a separate message after the main reply
-        setTimeout(async () => {
-          try {
-            await sendSmsViaHttpSms(senderPhone, securityWarning);
-            console.log(`[httpSMS] Security warning sent to ${senderPhone}`);
-          } catch (err) {
-            console.error('[httpSMS] Failed to send security warning:', err);
-          }
-        }, 2000);
+        // Send reply back via SMSGate API
+        const sendResult = await sendSmsViaSmsGate(senderPhone, replyText);
+
+        // If the user's SMS contained a password, send a follow-up security warning
+        if (containedPassword) {
+          const securityWarning = '## SECURITY WARNING: Your previous message contained your password in plain text. Please DELETE it from your message history immediately for your safety.';
+          // Small delay so the warning arrives as a separate message after the main reply
+          setTimeout(async () => {
+            try {
+              await sendSmsViaSmsGate(senderPhone, securityWarning);
+              console.log(`[SMSGate] Security warning sent to ${senderPhone}`);
+            } catch (err) {
+              console.error('[SMSGate] Failed to send security warning:', err);
+            }
+          }, 2000);
+        }
+
+        res.status(200).json({
+          success: true,
+          message: 'SMS processed and reply sent',
+          data: {
+            from: senderPhone,
+            intent_reply: replyText,
+            sms_sent: sendResult.success,
+            sms_send_error: sendResult.error,
+            security_warning_queued: containedPassword,
+          },
+        });
+      } finally {
+        smsSemaphore.release();
       }
 
-      res.status(200).json({
-        success: true,
-        message: 'SMS processed and reply sent',
-        data: {
-          from: senderPhone,
-          owner: ownerPhone,
-          intent_reply: replyText,
-          sms_sent: sendResult.success,
-          sms_send_error: sendResult.error,
-          security_warning_queued: containedPassword,
-        },
-      });
-
     } catch (error) {
-      console.error('[httpSMS] Webhook error:', error);
+      console.error('[SMSGate] Webhook error:', error);
       res.status(500).json({
         success: false,
         error: 'Internal server error',
@@ -587,9 +704,9 @@ export function setupWebhookRoutes(app: express.Express): void {
     }
   };
 
-  // ── httpSMS Webhook Endpoints (primary + alias) ─────────────────────────
-  app.post('/api/sms-webhook', express.json({ type: '*/*' }), handleHttpSmsWebhook);
-  app.post('/sms-webhook', express.json({ type: '*/*' }), handleHttpSmsWebhook);
+  // ── SMSGate Webhook Endpoints (primary + alias) ─────────────────────────
+  app.post('/api/sms-webhook', express.json({ type: '*/*' }), handleSmsGateWebhook);
+  app.post('/sms-webhook', express.json({ type: '*/*' }), handleSmsGateWebhook);
 
   const handleEsp32Webhook = async (req: express.Request, res: express.Response) => {
     try {
@@ -643,25 +760,29 @@ export function setupWebhookRoutes(app: express.Express): void {
       message: 'SMS webhook service is running',
       timestamp: new Date().toISOString(),
       endpoints: {
-        httpsms: 'POST /api/sms-webhook (httpSMS CloudEvents)',
+        smsgate: 'POST /api/sms-webhook (SMSGate sms:received webhook)',
         esp32: 'POST /api/esp32-sms-webhook (ESP32/SIM800L)',
         health: 'GET /api/webhook-health',
       },
       config: {
-        httpsms_api_base_url: HTTPSMS_API_BASE_URL,
-        httpsms_api_key: process.env.HTTPSMS_API_KEY ? '> configured' : '!!! missing',
-        httpsms_owner_phone: process.env.HTTPSMS_OWNER_PHONE ? '> configured' : '!!! missing',
-        webhook_signing_key: process.env.HTTPSMS_WEBHOOK_SIGNING_KEY ? '> configured' : '!!! not set (validation disabled)',
+        smsgate_base_url: SMSGATE_BASE_URL,
+        smsgate_username: process.env.SMSGATE_USERNAME ? '> configured' : '!!! missing',
+        smsgate_password: process.env.SMSGATE_PASSWORD ? '> configured' : '!!! missing',
         openrouter_api_key: process.env.OPENROUTER_API_KEY
             ? '> configured'
             : '!!! missing',
+      },
+      concurrency: {
+        max_concurrent_sms: MAX_CONCURRENT_SMS,
+        active: smsSemaphore.activeCount,
+        queued: smsSemaphore.waitingCount,
       },
     });
   });
 
   console.log('SMS webhook routes configured:');
-  console.log('- POST /api/sms-webhook (httpSMS CloudEvents format)');
-  console.log('- POST /sms-webhook (httpSMS alias route)');
+  console.log('- POST /api/sms-webhook (SMSGate sms:received webhook)');
+  console.log('- POST /sms-webhook (SMSGate alias route)');
   console.log('- POST /api/esp32-sms-webhook (ESP32/SIM800L simple format)');
   console.log('- POST /esp32-sms-webhook (ESP32 alias route)');
   console.log('- GET /api/webhook-health (health check)');

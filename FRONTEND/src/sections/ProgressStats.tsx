@@ -15,24 +15,89 @@ export const defaultStatsData: StatsData = {
     overallPercentage: 86,
     totalTasks: 670,
     categories: [
-        { id: 1, name: "Frontend",        completed: 196, total: 197, color: "var(--bg-pink)", bgColor: "rgba(236, 72, 153, 0.1)" },
-        { id: 2, name: "Backend",         completed: 119, total: 131, color: "var(--bg-blue)", bgColor: "rgba(59, 130, 246, 0.1)" },
-        { id: 3, name: "Smart Contracts", completed: 84,  total: 87,  color: "var(--bg-yellow)", bgColor: "rgba(255, 214, 0, 0.1)" },
-        { id: 4, name: "Code",            completed: 181, total: 255, color: "var(--bg-purple)", bgColor: "rgba(168, 85, 247, 0.1)" },
-        { id: 5, name: "Bugs/Issues",     completed: 0,   total: 0,   color: "var(--text)", bgColor: "rgba(0, 0, 0, 0.05)" },
+        { id: 1, name: "Media",        completed: 0,   total: 0,   color: "var(--bg-purple)", bgColor: "rgba(168, 85, 247, 0.1)" },
+        { id: 2, name: "Code",         completed: 181, total: 255, color: "var(--bg-yellow)", bgColor: "rgba(255, 214, 0, 0.1)" },
+        { id: 3, name: "Bug/Issue",    completed: 0,   total: 0,   color: "var(--text)", bgColor: "rgba(0, 0, 0, 0.05)" },
+        { id: 4, name: "SmartContrat", completed: 84,  total: 87,  color: "var(--bg-pink)", bgColor: "rgba(236, 72, 153, 0.1)" },
     ],
     footerText: "2 Changes in last 24hrs"
 };
 
+import { getDevelopmentStats, updateDevelopmentStats } from '@/lib/neon';
+
+interface GithubCommit {
+    sha: string;
+    message: string;
+    url: string;
+}
+
 export function ProgressStats() {
     const [stats, setStats] = useState<StatsData>(defaultStatsData);
+    const [latestCommit, setLatestCommit] = useState<GithubCommit | null>(null);
+    const [commitCount, setCommitCount] = useState<number | null>(null);
 
     useEffect(() => {
-        const saved = localStorage.getItem('pigeon_stats');
-        if (saved) {
-            try { setStats(JSON.parse(saved)); }
-            catch (e) { console.error("Failed to parse stats", e); }
-        }
+        const fetchStats = async () => {
+            const dbStats = await getDevelopmentStats();
+            if (dbStats) {
+                const dbCatNames = dbStats.categories.map(c => c.name).join(',');
+                const defaultCatNames = defaultStatsData.categories.map(c => c.name).join(',');
+                
+                if (dbCatNames !== defaultCatNames) {
+                    const mergedCategories = defaultStatsData.categories.map(defCat => {
+                        const oldMatch = dbStats.categories.find(c => 
+                            c.name === defCat.name || 
+                            (c.name === 'Smart Contracts' && defCat.name === 'SmartContrat') ||
+                            (c.name === 'Bugs/Issues' && defCat.name === 'Bug/Issue') ||
+                            (c.name === 'BugandIssues' && defCat.name === 'Bug/Issue')
+                        );
+                        return oldMatch ? { ...defCat, completed: oldMatch.completed, total: oldMatch.total } : defCat;
+                    });
+                    const newStats = { ...dbStats, categories: mergedCategories };
+                    setStats(newStats);
+                    updateDevelopmentStats(newStats).catch(console.error);
+                } else {
+                    setStats(dbStats);
+                }
+            } else {
+                const saved = localStorage.getItem('pigeon_stats');
+                if (saved) {
+                    try { setStats(JSON.parse(saved)); }
+                    catch (e) { console.error("Failed to parse local stats", e); }
+                }
+            }
+        };
+
+        const fetchCommit = async () => {
+            try {
+                const res = await fetch('https://api.github.com/repos/HimanshuM685/PIGEON/commits?per_page=100');
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data && data.length > 0) {
+                        setLatestCommit({
+                            sha: data[0].sha.substring(0, 7),
+                            message: data[0].commit.message.split('\n')[0],
+                            url: data[0].html_url
+                        });
+
+                        const yesterday = new Date();
+                        yesterday.setHours(yesterday.getHours() - 24);
+                        
+                        const recentCommits = data.filter((commit: any) => {
+                            const commitDate = new Date(commit.commit.committer.date);
+                            return commitDate >= yesterday;
+                        });
+                        
+                        setCommitCount(recentCommits.length);
+                    }
+                }
+            } catch (e) {
+                console.error("Failed to fetch commit", e);
+            }
+        };
+
+        fetchStats();
+        fetchCommit();
     }, []);
 
     return (
@@ -85,8 +150,22 @@ export function ProgressStats() {
                             </div>
                         )
                     })}
-                    <div className="pt-8 border-t border-gray-200 text-sm font-mono font-bold uppercase tracking-widest text-gray-400">
-                        {stats.footerText}
+                    <div className="pt-8 border-t border-gray-200 flex flex-col xl:flex-row justify-between items-start xl:items-center gap-4">
+                        <div className="text-sm font-mono font-bold uppercase tracking-widest text-gray-400">
+                            {commitCount !== null ? `${commitCount} Changes in last 24hrs` : stats.footerText}
+                        </div>
+                        {latestCommit && (
+                            <a 
+                                href={latestCommit.url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="group flex items-center gap-2 text-xs font-mono font-bold uppercase tracking-widest text-[var(--text)] hover:text-white hover:bg-dark-ink transition-all duration-300 bg-white border border-gray-200 px-4 py-2 rounded-full truncate max-w-full"
+                            >
+                                <span className="opacity-60 whitespace-nowrap">Latest:</span>
+                                <span className="truncate">{latestCommit.message}</span>
+                                <span className="opacity-40 whitespace-nowrap">({latestCommit.sha})</span>
+                            </a>
+                        )}
                     </div>
                 </div>
             </div>

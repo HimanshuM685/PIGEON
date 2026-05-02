@@ -78,7 +78,7 @@ export function Architecture() {
 
             {/* Massive Bottom Text */}
             <div className="w-full overflow-hidden pointer-events-none opacity-5 select-none flex py-12 will-change-transform transform-gpu">
-                <span className="font-display text-[7vw] md:text-[9.8vw] leading-[0.8] tracking-tighter whitespace-nowrap text-white will-change-transform transform-gpu">
+                <span className="font-display text-[10vw] md:text-[9.8vw] leading-[0.8] tracking-tighter whitespace-nowrap text-white will-change-transform transform-gpu">
                     SYSTEM OVERVIEW
                 </span>
             </div>

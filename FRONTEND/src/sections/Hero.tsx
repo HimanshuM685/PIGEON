@@ -44,7 +44,7 @@ export function Hero() {
             className="relative min-h-screen flex items-end px-6 sm:px-8 pb-12 pt-32 overflow-hidden bg-vibrant-yellow"
         >
             {/* Massive Background Text Watermark */}
-            <div className="absolute top-1/2 left-0 -translate-y-1/2 w-full overflow-hidden pointer-events-none opacity-10 md:opacity-20 select-none flex will-change-transform transform-gpu">
+            <div className="absolute top-[40%] md:top-1/2 left-0 -translate-y-1/2 w-full overflow-hidden pointer-events-none opacity-10 md:opacity-20 select-none flex will-change-transform transform-gpu">
                 <span className="hero-bg-text font-display text-[20vw] md:text-[25vw] leading-[0.8] tracking-tighter whitespace-nowrap text-dark-ink will-change-transform transform-gpu">
                     PIGEON
                 </span>
@@ -54,7 +54,7 @@ export function Hero() {
                 
                 {/* Massive Headline */}
                 <div className="flex-1">
-                    <h1 className="font-display flex flex-col uppercase tracking-tighter w-full text-left">
+                    <h1 className="font-display flex flex-col uppercase tracking-tighter w-full text-center md:text-left">
                         <div className="overflow-hidden">
                             <span className="hero-text-anim block text-massive text-dark-ink will-change-transform transform-gpu">SEND</span>
                         </div>

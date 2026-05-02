@@ -1,29 +1,67 @@
 import { useState } from 'react';
 import { motion } from 'motion/react';
 import { ShieldCheck, Plus, Settings, BarChart3, Save } from 'lucide-react';
-import { getWaitlistCount } from '@/lib/neon';
-import { useEffect } from 'react';
-import { type StatsData, type StatCategory, defaultStatsData } from './ProgressStats';
+    import { getWaitlistCount, getDevelopmentStats, updateDevelopmentStats } from '@/lib/neon';
+    import { useEffect } from 'react';
+    import { type StatsData, type StatCategory, defaultStatsData } from './ProgressStats';
 
-export function Admin() {
-    const [isAuthenticated, setIsAuthenticated] = useState(false);
-    const [username, setUsername] = useState('');
-    const [password, setPassword] = useState('');
-    const [count, setCount] = useState<number | null>(null);
-    const [stats, setStats] = useState<StatsData>(defaultStatsData);
+    export function Admin() {
+        const [isAuthenticated, setIsAuthenticated] = useState(false);
+        const [username, setUsername] = useState('');
+        const [password, setPassword] = useState('');
+        const [count, setCount] = useState<number | null>(null);
+        const [stats, setStats] = useState<StatsData>(defaultStatsData);
+        const [isSaving, setIsSaving] = useState(false);
 
-    useEffect(() => {
-        const saved = localStorage.getItem('pigeon_stats');
-        if (saved) {
-            try { setStats(JSON.parse(saved)); }
-            catch (e) { console.error("Failed to parse stats", e); }
-        }
-    }, []);
+        useEffect(() => {
+            const fetchStats = async () => {
+                const dbStats = await getDevelopmentStats();
+                if (dbStats) {
+                    const dbCatNames = dbStats.categories.map(c => c.name).join(',');
+                    const defaultCatNames = defaultStatsData.categories.map(c => c.name).join(',');
+                    
+                    if (dbCatNames !== defaultCatNames) {
+                        const mergedCategories = defaultStatsData.categories.map(defCat => {
+                            const oldMatch = dbStats.categories.find(c => 
+                                c.name === defCat.name || 
+                                (c.name === 'Smart Contracts' && defCat.name === 'SmartContrat') ||
+                                (c.name === 'Bugs/Issues' && defCat.name === 'Bug/Issue') ||
+                                (c.name === 'BugandIssues' && defCat.name === 'Bug/Issue')
+                            );
+                            return oldMatch ? { ...defCat, completed: oldMatch.completed, total: oldMatch.total } : defCat;
+                        });
+                        const newStats = { ...dbStats, categories: mergedCategories };
+                        setStats(newStats);
+                        updateDevelopmentStats(newStats).catch(console.error);
+                    } else {
+                        setStats(dbStats);
+                    }
+                } else {
+                    const saved = localStorage.getItem('pigeon_stats');
+                    if (saved) {
+                        try { setStats(JSON.parse(saved)); }
+                        catch (e) { console.error("Failed to parse local stats", e); }
+                    }
+                }
+            };
+            if (isAuthenticated) {
+                fetchStats();
+            }
+        }, [isAuthenticated]);
 
-    const saveStats = () => {
-        localStorage.setItem('pigeon_stats', JSON.stringify(stats));
-        alert('Stats updated successfully!');
-    };
+        const saveStats = async () => {
+            setIsSaving(true);
+            try {
+                await updateDevelopmentStats(stats);
+                alert('Stats updated successfully in database!');
+                // Keep local storage as backup
+                localStorage.setItem('pigeon_stats', JSON.stringify(stats));
+            } catch (error) {
+                alert('Failed to update stats in database. Check console for details.');
+            } finally {
+                setIsSaving(false);
+            }
+        };
 
     const updateStatsWithCategories = (newCategories: StatCategory[]) => {
         const totalTasks = newCategories.reduce((acc, cat) => acc + (cat.total || 0), 0);
@@ -154,10 +192,11 @@ export function Admin() {
                             </div>
                             <button 
                                 onClick={saveStats}
-                                className="btn-editorial bg-vibrant-yellow text-dark-ink border-0 flex items-center gap-2"
+                                disabled={isSaving}
+                                className="btn-editorial bg-vibrant-yellow text-dark-ink border-0 flex items-center gap-2 disabled:opacity-50"
                             >
                                 <Save size={18} />
-                                Save Changes
+                                {isSaving ? 'Saving...' : 'Save Changes'}
                             </button>
                         </div>
 
