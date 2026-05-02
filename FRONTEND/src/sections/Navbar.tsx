@@ -3,14 +3,11 @@ import { cn } from '@/lib/utils'
 
 const navLinks = [
     { label: 'Home',         href: '#home' },
-    { label: 'About',        href: '#about' },
     { label: 'Features',     href: '#features' },
     { label: 'How It Works', href: '#how-it-works' },
     { label: 'Architecture', href: '#architecture' },
     { label: 'Team',         href: '#team' },
-    { label: 'Stats',        href: '#stats' },
     { label: 'Waitlist',     href: '#waitlist' },
-    { label: 'Docs',         href: '#docs' },
 ]
 
 export function Navbar() {
@@ -35,40 +32,39 @@ export function Navbar() {
     return (
         <nav
             className={cn(
-                'fixed top-0 left-0 right-0 z-50 transition-all duration-400',
+                'fixed top-6 left-1/2 -translate-x-1/2 z-50 transition-all duration-500 w-[95%] max-w-7xl rounded-full',
                 scrolled
-                    ? 'glass-strong border-b-2 border-[var(--border)] py-3 shadow-[var(--shadow-xs)]'
-                    : 'py-5 bg-transparent'
+                    ? 'rough-glass py-3 px-6'
+                    : 'bg-transparent py-4 px-6'
             )}
         >
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 flex items-center justify-between">
+            <div className="flex items-center justify-between">
                 {/* Logo */}
                 <a
                     href="#home"
                     onClick={(e) => handleNavClick(e, '#home')}
-                    className="flex items-center gap-2 group select-none"
+                    className="flex items-center gap-3 group select-none"
                 >
-                    <svg width="28" height="28" viewBox="0 0 64 64" fill="none" className="transition-transform duration-300 group-hover:scale-110 drop-shadow-[2px_2px_0px_#111111]">
-                        <polygon points="8,44 24,20 40,28 32,48" fill="var(--bg-yellow)" stroke="var(--text)" strokeWidth="3" strokeLinejoin="round"/>
-                        <polygon points="24,20 48,14 40,28" fill="var(--bg-green)" stroke="var(--text)" strokeWidth="3" strokeLinejoin="round"/>
-                        <polygon points="24,20 34,10 40,18 32,26" fill="var(--bg-blue)" stroke="var(--text)" strokeWidth="3" strokeLinejoin="round"/>
-                        <polygon points="34,10 44,8 38,16" fill="var(--bg-red)" stroke="var(--text)" strokeWidth="3" strokeLinejoin="round"/>
-                        <circle cx="35" cy="16" r="2.5" fill="var(--text)"/>
-                        <polygon points="8,44 4,54 16,46" fill="var(--bg-pink)" stroke="var(--text)" strokeWidth="3" strokeLinejoin="round"/>
-                    </svg>
-                    <span className="font-display font-black text-2xl tracking-[0.05em] uppercase text-[var(--text)] group-hover:text-[var(--bg-red)] transition-colors duration-300">
-                        Pigeon
+                    <img 
+                        src="/favicon.svg" 
+                        alt="Pigeon Logo" 
+                        width="32" 
+                        height="32" 
+                        className="transition-transform duration-300 group-hover:scale-110 group-hover:rotate-[15deg] drop-shadow-md"
+                    />
+                    <span className="editorial-heading text-2xl tracking-[0.05em] text-[var(--text)] group-hover:text-vibrant-yellow transition-colors duration-300">
+                        PIGEON
                     </span>
                 </a>
 
                 {/* Desktop Links */}
-                <div className="hidden lg:flex items-center gap-6">
+                <div className="hidden lg:flex items-center gap-8">
                     {navLinks.map((link) => (
                         <a
                             key={link.href}
                             href={link.href}
                             onClick={(e) => handleNavClick(e, link.href)}
-                            className="text-xs font-bold tracking-widest uppercase text-[var(--text)] hover:text-[var(--bg-red)] transition-colors duration-300 relative after:content-[''] after:absolute after:bottom-[-4px] after:left-0 after:w-0 after:h-[2px] after:bg-[var(--bg-red)] after:transition-all after:duration-300 hover:after:w-full"
+                            className="text-xs font-bold tracking-widest uppercase text-[var(--text)] hover:text-dark-ink transition-all duration-300 relative after:content-[''] after:absolute after:-bottom-1 after:left-1/2 after:-translate-x-1/2 after:w-0 after:h-[2px] after:bg-dark-ink after:transition-all after:duration-300 hover:after:w-full hover:-translate-y-0.5"
                         >
                             {link.label}
                         </a>
@@ -77,7 +73,7 @@ export function Navbar() {
                         href="https://github.com/HimanshuM685/PIGEON"
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="px-4 py-1.5 text-xs font-bold uppercase tracking-widest border-2 border-[var(--border)] text-[var(--text)] hover:bg-[var(--bg-red)] hover:text-white transition-all duration-300 rounded-full brutal-shadow-hover"
+                        className="btn-editorial py-2.5 px-6 text-xs"
                     >
                         GitHub
                     </a>
@@ -85,31 +81,30 @@ export function Navbar() {
 
                 {/* Mobile Toggle */}
                 <button
-                    className="lg:hidden flex flex-col gap-1.5 p-2"
+                    className="lg:hidden flex flex-col gap-1.5 p-2 rounded-full hover:bg-[var(--bg-surface)] transition-colors"
                     onClick={() => setMobileOpen(!mobileOpen)}
                     aria-label="Toggle menu"
-                    id="mobile-menu-toggle"
                 >
-                    <span className={cn('block w-6 h-0.5 bg-[var(--text)] transition-all duration-300', mobileOpen && 'rotate-45 translate-y-2')} />
-                    <span className={cn('block w-6 h-0.5 bg-[var(--text)] transition-all duration-300', mobileOpen && 'opacity-0')} />
-                    <span className={cn('block w-6 h-0.5 bg-[var(--text)] transition-all duration-300', mobileOpen && '-rotate-45 -translate-y-2')} />
+                    <span className={cn('block w-6 h-0.5 bg-[var(--text)] transition-all duration-300 rounded-full', mobileOpen && 'rotate-45 translate-y-2')} />
+                    <span className={cn('block w-6 h-0.5 bg-[var(--text)] transition-all duration-300 rounded-full', mobileOpen && 'opacity-0')} />
+                    <span className={cn('block w-6 h-0.5 bg-[var(--text)] transition-all duration-300 rounded-full', mobileOpen && '-rotate-45 -translate-y-2')} />
                 </button>
             </div>
 
             {/* Mobile Menu */}
             <div className={cn(
-                'lg:hidden overflow-hidden transition-all duration-300',
+                'lg:hidden overflow-hidden transition-all duration-500 ease-in-out absolute top-full left-0 right-0 mt-4 mx-2 rounded-3xl rough-glass',
                 mobileOpen
-                    ? 'max-h-[600px] border-t border-[var(--border)] glass-strong nav-mobile-open'
-                    : 'max-h-0'
+                    ? 'max-h-[600px] opacity-100 scale-100'
+                    : 'max-h-0 opacity-0 scale-95 pointer-events-none'
             )}>
-                <div className="px-4 py-5 flex flex-col gap-1">
+                <div className="px-6 py-8 flex flex-col gap-4 text-center">
                     {navLinks.map((link) => (
                         <a
                             key={link.href}
                             href={link.href}
                             onClick={(e) => handleNavClick(e, link.href)}
-                            className="text-sm font-bold uppercase tracking-widest text-[var(--text)] hover:text-[var(--bg-red)] hover:bg-[var(--bg-surface)] transition-all duration-200 px-3 py-2.5 rounded-xl border-2 border-transparent hover:border-[var(--border)]"
+                            className="editorial-heading text-xl text-[var(--text)] hover:text-dark-ink transition-all duration-200"
                         >
                             {link.label}
                         </a>
@@ -118,7 +113,7 @@ export function Navbar() {
                         href="https://github.com/HimanshuM685/PIGEON"
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="mt-2 w-full px-4 py-2.5 text-sm font-bold uppercase tracking-widest border-2 border-[var(--border)] text-[var(--text)] hover:bg-[var(--bg-red)] hover:text-white transition-all duration-300 text-center rounded-full brutal-shadow"
+                        className="btn-editorial mt-4"
                     >
                         GitHub
                     </a>

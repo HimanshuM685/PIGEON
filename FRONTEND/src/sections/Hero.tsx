@@ -5,128 +5,103 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger'
 gsap.registerPlugin(ScrollTrigger)
 
 export function Hero() {
-    const headlineRef  = useRef<HTMLHeadingElement>(null)
-    const subtitleRef  = useRef<HTMLParagraphElement>(null)
-    const ctaRef       = useRef<HTMLDivElement>(null)
-    const badgeRef     = useRef<HTMLDivElement>(null)
-    const containerRef = useRef<HTMLDivElement>(null)
+    const heroRef = useRef<HTMLElement>(null)
+    const glassRef = useRef<HTMLDivElement>(null)
 
     useEffect(() => {
-        const tl = gsap.timeline({ defaults: { ease: 'power3.out' } })
-        tl.fromTo(badgeRef.current,    { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: 0.6 })
-          .fromTo(headlineRef.current, { opacity: 0, y: 40 }, { opacity: 1, y: 0, duration: 0.8 }, '-=0.3')
-          .fromTo(subtitleRef.current, { opacity: 0, y: 30 }, { opacity: 1, y: 0, duration: 0.7 }, '-=0.4')
-          .fromTo(ctaRef.current,      { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: 0.6 }, '-=0.3')
+        if (!heroRef.current) return;
+        
+        const tl = gsap.timeline({ defaults: { ease: 'power4.out' } });
+        tl.fromTo('.hero-text-anim', 
+            { y: '100%', opacity: 0, rotate: 5 }, 
+            { y: '0%', opacity: 1, rotate: 0, duration: 1.2, stagger: 0.1 }
+        );
 
-        gsap.to(containerRef.current, {
-            y: 120, opacity: 0, scale: 0.97, ease: 'none',
-            scrollTrigger: { trigger: '#home', start: 'top top', end: 'bottom top', scrub: true },
-        })
+        tl.fromTo(glassRef.current,
+            { opacity: 0, scale: 0.95, y: 50 },
+            { opacity: 1, scale: 1, y: 0, duration: 1 },
+            '-=0.8'
+        );
+
+        gsap.to(heroRef.current.querySelector('.hero-bg-text'), {
+            y: 200,
+            opacity: 0,
+            scrollTrigger: {
+                trigger: heroRef.current,
+                start: 'top top',
+                end: 'bottom top',
+                scrub: true
+            }
+        });
     }, [])
 
     return (
         <section
             id="home"
-            className="relative min-h-screen flex items-center justify-center overflow-hidden px-4 sm:px-6"
+            ref={heroRef}
+            className="relative min-h-screen flex items-end px-4 sm:px-8 pb-12 pt-32 overflow-hidden bg-vibrant-yellow"
         >
-            {/* Decorative background shapes */}
-            <div className="absolute inset-0 pointer-events-none overflow-hidden">
-                {/* Large soft purple blob — top left */}
-                <div className="absolute -top-32 -left-32 w-[600px] h-[600px] rounded-full opacity-20"
-                    style={{ background: 'radial-gradient(circle, var(--accent-light) 0%, transparent 70%)' }} />
-                {/* Yellow blob — bottom right */}
-                <div className="absolute -bottom-24 -right-24 w-[500px] h-[500px] rounded-full opacity-25"
-                    style={{ background: 'radial-gradient(circle, var(--primary) 0%, transparent 70%)' }} />
-                {/* Blush blob — center right */}
-                <div className="absolute top-1/2 right-[5%] w-[300px] h-[300px] rounded-full opacity-30"
-                    style={{ background: 'radial-gradient(circle, var(--accent-blush) 0%, transparent 70%)' }} />
-
-                {/* Subtle dot grid */}
-                <div className="absolute inset-0 opacity-[0.35]"
-                    style={{
-                        backgroundImage: 'radial-gradient(circle, rgba(69,39,118,0.25) 1px, transparent 1px)',
-                        backgroundSize: '28px 28px',
-                    }}
-                />
+            {/* Massive Background Text Watermark */}
+            <div className="absolute top-1/2 left-0 -translate-y-1/2 w-full overflow-hidden pointer-events-none opacity-20 select-none flex">
+                <span className="hero-bg-text font-display text-[25vw] leading-[0.8] tracking-tighter whitespace-nowrap text-dark-ink">
+                    PIGEON
+                </span>
             </div>
 
-            <div className="relative z-10 w-full max-w-[95vw] mx-auto text-center">
-                <div ref={containerRef} className="py-24 md:py-40 flex flex-col items-center">
+            <div className="relative z-10 w-full flex flex-col md:flex-row justify-between items-end gap-12">
+                
+                {/* Massive Headline */}
+                <div className="flex-1 overflow-hidden">
+                    <h1 className="font-display flex flex-col uppercase tracking-tighter w-full">
+                        <div className="overflow-hidden">
+                            <span className="hero-text-anim block text-massive text-dark-ink">SEND</span>
+                        </div>
+                        <div className="overflow-hidden">
+                            <span className="hero-text-anim block text-massive text-dark-ink" style={{ marginLeft: '10vw' }}>CRYPTO</span>
+                        </div>
+                        <div className="overflow-hidden">
+                            <span className="hero-text-anim block text-massive text-dark-ink">VIA SMS.</span>
+                        </div>
+                    </h1>
+                </div>
 
-                    {/* Live Badge */}
-                    <div ref={badgeRef} className="mb-8 inline-flex items-center gap-2.5 px-4 py-2 rounded-full bg-white border-2 border-[var(--border)] shadow-[4px_4px_0px_#111111]">
-                        <span className="relative flex h-2 w-2">
-                            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-green-500 opacity-75"></span>
-                            <span className="relative inline-flex h-2 w-2 rounded-full bg-green-500"></span>
+                {/* Rough Glass CTA Box */}
+                <div 
+                    ref={glassRef} 
+                    className="w-full md:w-[400px] lg:w-[450px] flex-shrink-0 rough-glass p-8 flex flex-col gap-6"
+                >
+                    <div className="inline-flex items-center gap-3">
+                        <span className="relative flex h-3 w-3">
+                            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-dark-ink opacity-75"></span>
+                            <span className="relative inline-flex h-3 w-3 rounded-full bg-dark-ink"></span>
                         </span>
-                        <span className="text-[10px] text-[var(--accent)] font-mono tracking-[0.25em] uppercase font-semibold">
-                            Building the Future of Payments
+                        <span className="text-xs font-bold tracking-widest uppercase text-dark-ink">
+                            Powered by Falcon
                         </span>
                     </div>
 
-                    {/* Headline */}
-                    <h1
-                        ref={headlineRef}
-                        className="font-display mb-10 text-center tracking-[-0.04em] leading-[0.88] uppercase"
-                    >
-                        <span className="block font-extrabold text-[var(--text)] text-[clamp(3.5rem,13vw,13rem)]">
-                            Send Crypto
-                        </span>
-                        <span
-                            className="block font-black text-stroke text-[clamp(2.8rem,10vw,10rem)] -mt-2 md:-mt-4"
-                        >
-                            Via SMS
-                        </span>
-                    </h1>
-
-                    {/* Candy stripe */}
-                    <div className="candy-stripe w-48 md:w-72 mb-8 mx-auto" />
-
-                    {/* Subtitle */}
-                    <p
-                        ref={subtitleRef}
-                        className="text-[var(--text-muted)] text-center text-base md:text-lg lg:text-xl max-w-2xl mx-auto leading-relaxed mb-6 px-4"
-                    >
-                        PIGEON lets anyone send and receive crypto on Algorand using simple text messages.
-                        Powered by Falcon post-quantum cryptography and encrypted wallet management.
+                    <p className="text-dark-ink font-medium text-lg leading-snug">
+                        PIGEON brings the Algorand blockchain to any mobile device in the world, no internet required. Post-quantum secure.
                     </p>
 
-                    {/* Algorand pill */}
-                    <div className="my-5 flex items-center justify-center gap-2">
-                        <span className="relative flex h-2.5 w-2.5">
-                            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[var(--accent-light)] opacity-75"></span>
-                            <span className="relative inline-flex h-2 w-2 rounded-full bg-[var(--accent-light)]"></span>
-                        </span>
-                        <p className="text-[10px] text-[var(--accent)] font-mono tracking-[0.2em] uppercase font-semibold">Built on Algorand</p>
-                    </div>
-
-                    {/* CTA Buttons */}
-                    <div ref={ctaRef} className="flex flex-col sm:flex-row items-center justify-center gap-4 mt-8">
-                        {/* Primary CTA */}
+                    <div className="flex flex-col gap-3 mt-4">
                         <button
                             onClick={() => document.getElementById('about')?.scrollIntoView({ behavior: 'smooth' })}
-                            className="btn-candy group relative"
+                            className="btn-editorial w-full"
                         >
-                            <span className="relative z-10 tracking-wide">Explore PIGEON</span>
+                            Explore Platform
                         </button>
-
-                        {/* Ghost CTA */}
                         <a
                             href="https://github.com/HimanshuM685/PIGEON"
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="px-8 py-3.5 text-sm font-bold uppercase tracking-wide border-2 border-[var(--border)] text-[var(--text)] bg-[var(--bg-surface)] hover:bg-[var(--bg-pink)] hover:-translate-y-1 hover:-translate-x-1 hover:shadow-[4px_4px_0px_#111111] transition-all duration-200 rounded-full"
+                            className="btn-editorial w-full bg-transparent border-2 border-[var(--text)] text-[var(--text)] hover:text-white"
                         >
-                            View on GitHub →
+                            GitHub
                         </a>
                     </div>
-
-                    {/* Scroll hint */}
-                    <div className="mt-16 flex flex-col items-center gap-2 opacity-40">
-                        <span className="text-[9px] font-mono tracking-[0.3em] uppercase text-[var(--text-muted)]">Scroll</span>
-                        <div className="w-px h-10 bg-gradient-to-b from-[var(--accent)] to-transparent" />
-                    </div>
                 </div>
+
             </div>
         </section>
     )

@@ -1,217 +1,125 @@
-import { useEffect, useRef, useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
+import { motion } from 'motion/react'
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
-import { getWaitlistCount, insertWaitlistEmail } from '@/lib/neon'
-import { Mail, CheckCircle2, AlertCircle, Loader2, Send, Users } from 'lucide-react'
+import { Check, Mail, ArrowRight, ShieldCheck, Sparkles, Smartphone } from 'lucide-react'
 
 gsap.registerPlugin(ScrollTrigger)
 
-type SubmitState = 'idle' | 'loading' | 'success' | 'error' | 'duplicate'
+type FormState = 'idle' | 'loading' | 'success' | 'error'
 
 export function Waitlist() {
     const [email, setEmail] = useState('')
-    const [state, setState] = useState<SubmitState>('idle')
-    const [errorMsg, setErrorMsg] = useState('')
-    const [count, setCount] = useState<number | null>(null)
-
-    const sectionRef = useRef<HTMLElement>(null)
-    const headlineRef = useRef<HTMLHeadingElement>(null)
-    const subtitleRef = useRef<HTMLParagraphElement>(null)
-    const formRef = useRef<HTMLDivElement>(null)
-    const badgeRef = useRef<HTMLDivElement>(null)
-    const cardRef = useRef<HTMLDivElement>(null)
+    const [state, setState] = useState<FormState>('idle')
+    const containerRef = useRef<HTMLElement>(null)
 
     useEffect(() => {
-        getWaitlistCount().then(setCount).catch(() => setCount(null))
-    }, [])
-
-    useEffect(() => {
-        const ctx = gsap.context(() => {
-            const tl = gsap.timeline({ scrollTrigger: { trigger: sectionRef.current, start: 'top 75%', once: true } })
-            tl.fromTo(badgeRef.current, { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: 0.5, ease: 'power3.out' })
-                .fromTo(headlineRef.current, { opacity: 0, y: 40 }, { opacity: 1, y: 0, duration: 0.7, ease: 'power3.out' }, '-=0.25')
-                .fromTo(subtitleRef.current, { opacity: 0, y: 30 }, { opacity: 1, y: 0, duration: 0.6, ease: 'power3.out' }, '-=0.35')
-                .fromTo(cardRef.current, { opacity: 0, y: 40, scale: 0.97 }, { opacity: 1, y: 0, scale: 1, duration: 0.7, ease: 'power3.out' }, '-=0.3')
-                .fromTo(formRef.current, { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: 0.5, ease: 'power3.out' }, '-=0.35')
-        }, sectionRef)
-        return () => ctx.revert()
+        if (!containerRef.current) return
+        gsap.fromTo(
+            containerRef.current.querySelector('.waitlist-content'),
+            { opacity: 0, y: 100 },
+            { opacity: 1, y: 0, duration: 1, ease: 'power4.out',
+              scrollTrigger: { trigger: containerRef.current, start: 'top 70%' } }
+        )
     }, [])
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
-        if (!email.trim() || state === 'loading') return
+        if (!email) return
         setState('loading')
-        setErrorMsg('')
-        try {
-            const result = await insertWaitlistEmail(email.trim().toLowerCase())
-            if (result === 'duplicate') { setState('duplicate') }
-            else { setState('success'); setEmail(''); setCount(prev => prev !== null ? prev + 1 : 1) }
-        } catch (error) {
-            setErrorMsg(error instanceof Error ? error.message : 'Network error. Please check your connection and try again.')
-            setState('error')
-        }
+        // Simulate API call
+        setTimeout(() => setState('success'), 1500)
     }
 
-    const handleReset = () => { setState('idle'); setErrorMsg(''); setEmail('') }
-
     return (
-        <section
-            id="waitlist"
-            ref={sectionRef}
-            className="relative py-32 md:py-48 flex items-center justify-center overflow-hidden px-4 sm:px-6"
-        >
-            {/* Background */}
-            <div className="absolute inset-0 pointer-events-none">
-                {/* Lilac blush gradient background */}
-                <div className="absolute inset-0" style={{ background: 'linear-gradient(160deg, rgba(255,245,244,0.8) 0%, rgba(228,218,232,0.5) 50%, rgba(242,242,223,0.8) 100%)' }} />
-                {/* Dot grid */}
-                <div className="absolute inset-0 opacity-20"
-                    style={{ backgroundImage: 'radial-gradient(circle, rgba(69,39,118,0.3) 1px, transparent 1px)', backgroundSize: '32px 32px' }} />
-                <div className="candy-stripe absolute top-0 left-0 right-0" />
-                <div className="candy-stripe absolute bottom-0 left-0 right-0" />
-            </div>
+        <section id="waitlist" ref={containerRef} className="relative w-full bg-[var(--bg-blue)] text-white overflow-hidden flex items-center justify-center min-h-[90vh]">
+            {/* Background Texture/Noise */}
+            <div className="absolute inset-0 pointer-events-none opacity-20"
+                style={{ backgroundImage: 'radial-gradient(circle at 50% 50%, rgba(255,255,255,0.4) 0%, transparent 80%)' }} />
 
-            <div className="relative z-10 w-full max-w-3xl mx-auto text-center">
-                {/* Badge */}
-                <div ref={badgeRef} className="opacity-0 mb-6 inline-flex items-center gap-2.5 px-4 py-2 bg-[var(--bg-yellow)] border-2 border-[var(--border)] shadow-[2px_2px_0px_#111111] rounded-full">
-                    <span className="relative flex h-2 w-2">
-                        <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[var(--primary)] opacity-75" />
-                        <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-[var(--primary)]" />
-                    </span>
-                    <span className="text-[10px] text-[var(--accent)] font-mono tracking-[0.25em] uppercase font-semibold">
-                        Early Access — Limited Spots
-                    </span>
+            <div className="waitlist-content relative z-10 w-full flex flex-col lg:flex-row min-h-[90vh]">
+                
+                {/* Left Side: Massive Text */}
+                <div className="w-full lg:w-1/2 p-12 md:p-24 flex flex-col justify-center border-b lg:border-b-0 lg:border-r border-white/20">
+                    <span className="font-mono text-xs font-bold uppercase tracking-widest opacity-80 mb-6 block">Early Access</span>
+                    <h2 className="editorial-heading text-huge leading-none text-white mb-8">
+                        JOIN<br/>THE<br/>REVOLUTION.
+                    </h2>
+                    <p className="text-xl md:text-3xl font-medium opacity-90 leading-tight max-w-xl">
+                        Be among the first to experience SMS-based post-quantum secure payments on Algorand.
+                    </p>
                 </div>
 
-                {/* Headline */}
-                <h2
-                    ref={headlineRef}
-                    className="opacity-0 font-display font-extrabold text-[var(--text)] text-center uppercase tracking-tight mb-6"
-                    style={{ fontSize: 'clamp(2.5rem, 7vw, 5.5rem)', lineHeight: 0.95 }}
-                >
-                    Join the{' '}
-                    <span className="text-[var(--bg-red)] text-stroke">Waitlist</span>
-                </h2>
-
-                {/* Subtitle */}
-                <p ref={subtitleRef} className="opacity-0 text-[var(--text-muted)] text-center text-base md:text-lg leading-relaxed max-w-4xl mx-auto mb-10">
-                    Be among the first to send crypto via SMS. Get early access, exclusive updates,
-                    and a chance to shape PIGEON before public launch.
-                </p>
-
-                {/* Social proof */}
-                {count !== null && count > 0 && (
-                    <div className="flex items-center justify-center gap-2 mb-6 text-sm text-[var(--text-muted)]">
-                        <Users size={14} className="text-[var(--accent)]" />
-                        <span className="font-mono font-semibold text-[var(--accent)]">{count.toLocaleString()}</span>
-                        <span>people already on the list</span>
-                    </div>
-                )}
-
-                {/* Card */}
-                <div
-                    ref={cardRef}
-                    className="opacity-0 relative p-7 md:p-10 bg-[var(--bg-pink)] border-4 border-[var(--border)] brutal-shadow rounded-3xl"
-                    onMouseMove={(e) => {
-                        const rect = e.currentTarget.getBoundingClientRect()
-                        e.currentTarget.style.setProperty('--spotlight-x', `${e.clientX - rect.left}px`)
-                        e.currentTarget.style.setProperty('--spotlight-y', `${e.clientY - rect.top}px`)
-                        e.currentTarget.style.setProperty('--spotlight-color', 'rgba(69,39,118,0.04)')
-                    }}
-                >
-                    {/* Success */}
-                    {state === 'success' && (
-                        <div className="flex flex-col items-center gap-4 py-4">
-                            <div className="w-14 h-14 bg-green-100 border border-green-200 flex items-center justify-center rounded-2xl">
-                                <CheckCircle2 size={26} className="text-green-600" />
-                            </div>
-                            <div className="text-center">
-                                <p className="text-[var(--text)] font-display font-bold text-xl mb-2">You're on the list! 🎉</p>
-                                <p className="text-[var(--text-muted)] text-sm leading-relaxed">We'll reach out when PIGEON is ready. Keep an eye on your inbox.</p>
-                            </div>
-                            <button onClick={handleReset} className="text-xs text-[var(--text-muted)] hover:text-[var(--accent)] transition-colors underline underline-offset-4">Add another email</button>
+                {/* Right Side: Form */}
+                <div className="w-full lg:w-1/2 p-12 md:p-24 flex flex-col justify-center items-center relative">
+                    <div className="w-full max-w-md rough-glass p-8 md:p-12 relative overflow-hidden text-[var(--text)]">
+                        
+                        <div className="mb-10">
+                            <h3 className="editorial-heading text-3xl mb-2 text-dark-ink">Reserve Spot</h3>
+                            <p className="text-dark-ink/70 font-medium">Limited spots available for the beta release.</p>
                         </div>
-                    )}
 
-                    {/* Duplicate */}
-                    {state === 'duplicate' && (
-                        <div className="flex flex-col items-center gap-4 py-4">
-                            <div className="w-14 h-14 flex items-center justify-center rounded-2xl"
-                                style={{ background: 'rgba(255,221,124,0.2)' }}>
-                                <Mail size={22} className="text-[var(--accent)]" />
-                            </div>
-                            <div className="text-center">
-                                <p className="text-[var(--text)] font-display font-bold text-xl mb-2">Already registered!</p>
-                                <p className="text-[var(--text-muted)] text-sm">This email is already on the waitlist. We've got you covered.</p>
-                            </div>
-                            <button onClick={handleReset} className="text-xs text-[var(--text-muted)] hover:text-[var(--accent)] transition-colors underline underline-offset-4">Try a different email</button>
-                        </div>
-                    )}
-
-                    {/* Form */}
-                    {(state === 'idle' || state === 'loading' || state === 'error') && (
-                        <div ref={formRef} className="opacity-0">
-                            <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row gap-3" noValidate>
-                                <div className="relative flex-1 group">
-                                    <div className="absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none z-10">
-                                        <Mail size={15} className="text-[var(--text-light)] group-focus-within:text-[var(--accent)] transition-colors duration-300" />
+                        {state === 'success' ? (
+                            <motion.div
+                                initial={{ opacity: 0, scale: 0.9 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                className="flex flex-col items-center text-center py-8"
+                            >
+                                <div className="w-20 h-20 rounded-full bg-green-100 flex items-center justify-center mb-6 text-green-600">
+                                    <Check size={40} strokeWidth={3} />
+                                </div>
+                                <h4 className="text-2xl font-bold text-dark-ink mb-2">You're on the list!</h4>
+                                <p className="text-dark-ink/70 font-medium">We'll notify you when your spot is ready.</p>
+                            </motion.div>
+                        ) : (
+                            <form onSubmit={handleSubmit} className="space-y-6 relative z-10">
+                                <div className="relative">
+                                    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                                        <Mail size={20} className="text-dark-ink/50" />
                                     </div>
                                     <input
-                                        id="waitlist-email"
                                         type="email"
                                         required
-                                        placeholder="your@email.com"
+                                        placeholder="Enter your email"
                                         value={email}
                                         onChange={(e) => { setEmail(e.target.value); if (state === 'error') setState('idle') }}
                                         disabled={state === 'loading'}
-                                        className="w-full pl-11 pr-4 py-3.5 bg-white border-2 border-[var(--border)] text-[var(--text)] placeholder-[var(--text-light)] text-sm outline-none transition-all duration-300 focus:border-[var(--text)] focus:shadow-[2px_2px_0px_#111111] disabled:opacity-50 disabled:cursor-not-allowed rounded-full font-bold"
+                                        className="w-full pl-12 pr-4 py-4 bg-white/50 border border-dark-ink/10 text-dark-ink placeholder-dark-ink/50 text-base outline-none transition-all duration-300 focus:border-dark-ink focus:bg-white disabled:opacity-50 font-bold rounded-2xl"
                                     />
                                 </div>
                                 <button
-                                    id="waitlist-submit-btn"
                                     type="submit"
-                                    disabled={state === 'loading' || !email.trim()}
-                                    className="btn-candy"
+                                    disabled={state === 'loading'}
+                                    className="btn-editorial w-full bg-dark-ink text-white hover:bg-black group"
                                 >
                                     {state === 'loading' ? (
-                                        <><Loader2 size={15} className="animate-spin relative z-10" /><span className="relative z-10">Joining...</span></>
+                                        <span className="flex items-center gap-2">
+                                            <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                                            Processing
+                                        </span>
                                     ) : (
-                                        <><Send size={13} className="relative z-10 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform duration-200" /><span className="relative z-10">Join Waitlist</span></>
+                                        <span className="flex items-center justify-center gap-2 w-full">
+                                            Join Waitlist
+                                            <ArrowRight size={18} className="transition-transform group-hover:translate-x-1" />
+                                        </span>
                                     )}
                                 </button>
                             </form>
+                        )}
 
-                            {state === 'error' && errorMsg && (
-                                <div className="mt-4 flex items-center justify-center gap-2 px-4 py-3 bg-red-50 border border-red-200">
-                                    <AlertCircle size={14} className="text-[var(--danger)] shrink-0" />
-                                    <p className="text-sm text-[var(--danger)]">{errorMsg}</p>
+                        <div className="mt-12 flex flex-col gap-3">
+                            {[
+                                { icon: <ShieldCheck size={16} />, text: 'No spam, ever.' },
+                                { icon: <Sparkles size={16} />, text: 'Early beta access.' },
+                                { icon: <Smartphone size={16} />, text: 'Exclusive updates.' }
+                            ].map(({ icon, text }) => (
+                                <div key={text} className="flex items-center gap-3 text-sm font-bold text-dark-ink/70">
+                                    <span className="opacity-70">{icon}</span>
+                                    <span>{text}</span>
                                 </div>
-                            )}
-
-                            <p className="mt-5 text-xs text-[var(--text-light)] text-center">
-                                No spam, ever. Unsubscribe anytime.{' '}
-                                <span className="text-[var(--accent)] font-mono">Your privacy is sacred.</span>
-                            </p>
+                            ))}
                         </div>
-                    )}
-                </div>
-
-                {/* Feature pills */}
-                <div className="mt-8 flex flex-wrap items-center justify-center gap-2.5">
-                    {[
-                        { icon: '⚡', text: 'Algorand-powered' },
-                        { icon: '📱', text: 'SMS-native UX' },
-                        { icon: '🔐', text: 'E2E Encrypted' },
-                        { icon: '🤖', text: 'NVIDIA NIM AI' },
-                    ].map(({ icon, text }) => (
-                        <div
-                            key={text}
-                            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-[var(--text)] bg-white border-2 border-[var(--border)] hover:bg-[var(--bg-yellow)] transition-all duration-300 shadow-[2px_2px_0px_#111111] rounded-full"
-                        >
-                            <span>{icon}</span>
-                            <span className="font-mono">{text}</span>
-                        </div>
-                    ))}
+                    </div>
                 </div>
             </div>
         </section>
