@@ -1,21 +1,17 @@
 import { useState, useEffect } from 'react'
 import { cn } from '@/lib/utils'
-import { Zap } from 'lucide-react'
 
 const navLinks = [
-    { label: 'Home', href: '#home' },
-    { label: 'About', href: '#about' },
-    { label: 'Features', href: '#features' },
+    { label: 'Home',         href: '#home' },
+    { label: 'Features',     href: '#features' },
     { label: 'How It Works', href: '#how-it-works' },
     { label: 'Architecture', href: '#architecture' },
-    { label: 'Team', href: '#team' },
-    { label: 'Stats', href: '#stats' },
-    { label: 'Waitlist', href: '#waitlist' },
-    { label: 'Docs', href: '#docs' },
+    { label: 'Team',         href: '#team' },
+    { label: 'Waitlist',     href: '#waitlist' },
 ]
 
 export function Navbar() {
-    const [scrolled, setScrolled] = useState(false)
+    const [scrolled,   setScrolled]   = useState(false)
     const [mobileOpen, setMobileOpen] = useState(false)
 
     useEffect(() => {
@@ -26,42 +22,49 @@ export function Navbar() {
 
     const handleNavClick = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
         e.preventDefault()
-        window.location.hash = href;
+        window.location.hash = href
         const el = document.querySelector(href)
-        if (el) {
-            el.scrollIntoView({ behavior: 'smooth' })
-        } else {
-            window.scrollTo({ top: 0, behavior: 'smooth' })
-        }
+        if (el) el.scrollIntoView({ behavior: 'smooth' })
+        else    window.scrollTo({ top: 0, behavior: 'smooth' })
         setMobileOpen(false)
     }
 
     return (
         <nav
             className={cn(
-                'fixed top-0 left-0 right-0 z-50 transition-all duration-500',
+                'fixed top-6 left-1/2 -translate-x-1/2 z-50 transition-all duration-500 w-[95%] max-w-7xl rounded-full',
                 scrolled
-                    ? 'glass-strong py-3 shadow-lg shadow-black/20'
-                    : 'py-5 bg-transparent'
+                    ? 'rough-glass py-3 px-6'
+                    : 'bg-transparent py-4 px-6'
             )}
         >
-            <div className="max-w-7xl mx-auto px-6 flex items-center justify-between">
+            <div className="flex items-center justify-between">
                 {/* Logo */}
-                <a href="#home" className="flex items-center gap-1 group">
-                    <span className="text-[var(--accent)] text-2xl font-light opacity-50 group-hover:opacity-100 transition-opacity">[</span>
-                    <Zap size={18} className="text-[var(--primary)] fill-[var(--primary)] group-hover:scale-110 transition-transform" />
-                    <span className="text-xl font-bold tracking-[0.2em] uppercase ml-1 group-hover:text-white transition-colors">Pigeon</span>
-                    <span className="text-[var(--accent)] text-2xl font-light opacity-50 group-hover:opacity-100 transition-opacity">]</span>
+                <a
+                    href="#home"
+                    onClick={(e) => handleNavClick(e, '#home')}
+                    className="flex items-center gap-3 group select-none"
+                >
+                    <img 
+                        src="/favicon.svg" 
+                        alt="Pigeon Logo" 
+                        width="32" 
+                        height="32" 
+                        className="transition-transform duration-300 group-hover:scale-110 group-hover:rotate-[15deg] drop-shadow-md"
+                    />
+                    <span className="editorial-heading text-2xl tracking-[0.05em] text-[var(--text)] group-hover:text-vibrant-yellow transition-colors duration-300">
+                        PIGEON
+                    </span>
                 </a>
 
                 {/* Desktop Links */}
-                <div className="hidden md:flex items-center gap-8">
+                <div className="hidden lg:flex items-center gap-8">
                     {navLinks.map((link) => (
                         <a
                             key={link.href}
                             href={link.href}
                             onClick={(e) => handleNavClick(e, link.href)}
-                            className="text-sm text-[var(--muted-foreground)] hover:text-white transition-colors duration-300 relative after:content-[''] after:absolute after:bottom-[-4px] after:left-0 after:w-0 after:h-[2px] after:bg-[var(--primary)] after:transition-all after:duration-300 hover:after:w-full"
+                            className="text-xs font-bold tracking-widest uppercase text-[var(--text)] hover:text-dark-ink transition-all duration-300 relative after:content-[''] after:absolute after:-bottom-1 after:left-1/2 after:-translate-x-1/2 after:w-0 after:h-[2px] after:bg-dark-ink after:transition-all after:duration-300 hover:after:w-full hover:-translate-y-0.5"
                         >
                             {link.label}
                         </a>
@@ -70,7 +73,7 @@ export function Navbar() {
                         href="https://github.com/HimanshuM685/PIGEON"
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="px-4 py-2 rounded-full text-sm font-medium border border-[var(--border)] hover:border-[var(--primary)] hover:text-[var(--primary)] transition-all duration-300"
+                        className="btn-editorial py-2.5 px-6 text-xs"
                     >
                         GitHub
                     </a>
@@ -78,37 +81,30 @@ export function Navbar() {
 
                 {/* Mobile Toggle */}
                 <button
-                    className="md:hidden flex flex-col gap-1.5 p-2"
+                    className="lg:hidden flex flex-col gap-1.5 p-2 rounded-full hover:bg-[var(--bg-surface)] transition-colors"
                     onClick={() => setMobileOpen(!mobileOpen)}
                     aria-label="Toggle menu"
                 >
-                    <span className={cn(
-                        'block w-6 h-0.5 bg-white transition-all duration-300',
-                        mobileOpen && 'rotate-45 translate-y-2'
-                    )} />
-                    <span className={cn(
-                        'block w-6 h-0.5 bg-white transition-all duration-300',
-                        mobileOpen && 'opacity-0'
-                    )} />
-                    <span className={cn(
-                        'block w-6 h-0.5 bg-white transition-all duration-300',
-                        mobileOpen && '-rotate-45 -translate-y-2'
-                    )} />
+                    <span className={cn('block w-6 h-0.5 bg-[var(--text)] transition-all duration-300 rounded-full', mobileOpen && 'rotate-45 translate-y-2')} />
+                    <span className={cn('block w-6 h-0.5 bg-[var(--text)] transition-all duration-300 rounded-full', mobileOpen && 'opacity-0')} />
+                    <span className={cn('block w-6 h-0.5 bg-[var(--text)] transition-all duration-300 rounded-full', mobileOpen && '-rotate-45 -translate-y-2')} />
                 </button>
             </div>
 
             {/* Mobile Menu */}
             <div className={cn(
-                'md:hidden overflow-hidden transition-all duration-300 glass-strong',
-                mobileOpen ? 'max-h-[500px] border-t border-[var(--border)] mt-3' : 'max-h-0'
+                'lg:hidden overflow-hidden transition-all duration-500 ease-in-out absolute top-full left-0 right-0 mt-4 mx-2 rounded-3xl rough-glass',
+                mobileOpen
+                    ? 'max-h-[600px] opacity-100 scale-100'
+                    : 'max-h-0 opacity-0 scale-95 pointer-events-none'
             )}>
-                <div className="px-6 py-4 flex flex-col gap-4">
+                <div className="px-6 py-8 flex flex-col gap-4 text-center">
                     {navLinks.map((link) => (
                         <a
                             key={link.href}
                             href={link.href}
                             onClick={(e) => handleNavClick(e, link.href)}
-                            className="text-sm font-medium text-[var(--muted-foreground)] hover:text-white transition-colors duration-300"
+                            className="editorial-heading text-xl text-[var(--text)] hover:text-dark-ink transition-all duration-200"
                         >
                             {link.label}
                         </a>
@@ -117,7 +113,7 @@ export function Navbar() {
                         href="https://github.com/HimanshuM685/PIGEON"
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="w-full px-4 py-2 mt-2 rounded-full text-sm font-medium border border-[var(--border)] hover:border-[var(--primary)] hover:text-[var(--primary)] transition-all duration-300 text-center"
+                        className="btn-editorial mt-4"
                     >
                         GitHub
                     </a>

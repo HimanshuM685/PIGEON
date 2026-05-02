@@ -2,20 +2,12 @@ import { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
 
 export interface StatCategory {
-    id: number;
-    name: string;
-    completed: number;
-    total: number;
-    color: string;
-    bgColor: string;
+    id: number; name: string; completed: number; total: number; color: string; bgColor: string;
 }
 
 export interface StatsData {
-    title: string;
-    overallPercentage: number;
-    totalTasks: number;
-    categories: StatCategory[];
-    footerText: string;
+    title: string; overallPercentage: number; totalTasks: number;
+    categories: StatCategory[]; footerText: string;
 }
 
 export const defaultStatsData: StatsData = {
@@ -23,11 +15,11 @@ export const defaultStatsData: StatsData = {
     overallPercentage: 86,
     totalTasks: 670,
     categories: [
-        { id: 1, name: "Frontend", completed: 196, total: 197, color: "#89933a", bgColor: "#4b5126" },
-        { id: 2, name: "Backend", completed: 119, total: 131, color: "#dc5331", bgColor: "#733324" },
-        { id: 3, name: "Smart Contracts", completed: 84, total: 87, color: "#e4ce36", bgColor: "#7b7125" },
-        { id: 4, name: "Code", completed: 181, total: 255, color: "#5ea1b6", bgColor: "#395e6c" },
-        { id: 5, name: "Bugs/Issues", completed: 0, total: 0, color: "#555b70", bgColor: "#363a4b" }
+        { id: 1, name: "Frontend",        completed: 196, total: 197, color: "var(--bg-pink)", bgColor: "rgba(236, 72, 153, 0.1)" },
+        { id: 2, name: "Backend",         completed: 119, total: 131, color: "var(--bg-blue)", bgColor: "rgba(59, 130, 246, 0.1)" },
+        { id: 3, name: "Smart Contracts", completed: 84,  total: 87,  color: "var(--bg-yellow)", bgColor: "rgba(255, 214, 0, 0.1)" },
+        { id: 4, name: "Code",            completed: 181, total: 255, color: "var(--bg-purple)", bgColor: "rgba(168, 85, 247, 0.1)" },
+        { id: 5, name: "Bugs/Issues",     completed: 0,   total: 0,   color: "var(--text)", bgColor: "rgba(0, 0, 0, 0.05)" },
     ],
     footerText: "2 Changes in last 24hrs"
 };
@@ -38,81 +30,67 @@ export function ProgressStats() {
     useEffect(() => {
         const saved = localStorage.getItem('pigeon_stats');
         if (saved) {
-            try {
-                setStats(JSON.parse(saved));
-            } catch (e) {
-                console.error("Failed to parse stats", e);
-            }
+            try { setStats(JSON.parse(saved)); }
+            catch (e) { console.error("Failed to parse stats", e); }
         }
     }, []);
 
     return (
-        <section id="stats" className="relative py-20 px-6 flex flex-col items-center justify-center">
-            <div className="text-center mb-12">
-                <h2 className="text-3xl md:text-5xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white to-gray-400">
-                    Build In Public
-                </h2>
-                <p className="mt-4 text-[var(--muted-foreground)]">Tracking our development progress</p>
-            </div>
+        <section id="stats" className="w-full relative flex flex-col lg:flex-row min-h-[80vh]">
             
-            <motion.div
-                initial={{ opacity: 0, scale: 0.95 }}
-                whileInView={{ opacity: 1, scale: 1 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.6 }}
-                className="w-full max-w-2xl glass-strong p-8 rounded-2xl border border-[var(--border)] glow-effect font-sans relative overflow-hidden"
-            >
-                {/* Header */}
-                <div className="flex justify-between items-end mb-6 border-b border-[var(--border)] pb-4">
-                    <h2 className="text-2xl text-white font-bold tracking-tight">
-                        {stats.title} <span className="text-[var(--primary)] text-xl font-medium tracking-normal ml-2 opacity-90">- {stats.overallPercentage}%</span>
+            {/* Left Side: Massive Typography */}
+            <div className="w-full lg:w-1/2 bg-dark-ink text-white p-12 md:p-24 flex flex-col justify-between">
+                <div>
+                    <span className="font-mono text-xs font-bold uppercase tracking-widest opacity-60">Build In Public</span>
+                    <h2 className="editorial-heading text-5xl md:text-7xl mt-4 leading-none">
+                        DEV<br/>PROGRESS.
                     </h2>
-                    <div className="bg-[var(--primary)] text-black px-3 py-1 rounded-sm shadow-[0_0_10px_var(--primary)] text-sm font-bold tracking-wide">
-                        {stats.totalTasks} Tasks
+                </div>
+                <div className="mt-20">
+                    <div className="text-[12rem] md:text-[18rem] leading-none font-display tracking-tighter text-vibrant-yellow mb-4">
+                        {stats.overallPercentage}%
+                    </div>
+                    <div className="text-xl font-medium opacity-80 max-w-sm">
+                        Tracking our development pipeline transparently. {stats.totalTasks} total tasks mapped.
                     </div>
                 </div>
+            </div>
 
-                {/* Bars */}
-                <div className="space-y-3 bg-black/40 border border-[var(--border)] p-2 rounded-lg backdrop-blur-sm">
+            {/* Right Side: Detailed Bars */}
+            <div className="w-full lg:w-1/2 bg-white p-12 md:p-24 flex flex-col justify-center">
+                <div className="space-y-12 w-full max-w-xl mx-auto">
                     {stats.categories.map((cat) => {
-                        const percentage = cat.total === 0 ? 0 : Math.round((cat.completed / cat.total) * 100);
-                        const displayPerc = cat.total === 0 ? "Fixed" : `${percentage}%`;
-                        const statsText = cat.total === 0 ? "[0/0]" : `[${cat.completed}/${cat.total}]`;
+                        const pct = cat.total === 0 ? 0 : Math.round((cat.completed / cat.total) * 100)
+                        const displayPerc = cat.total === 0 ? "Fixed" : `${pct}%`
+                        const statsText   = cat.total === 0 ? "[0/0]" : `[${cat.completed}/${cat.total}]`
 
                         return (
-                            <div
-                                key={cat.id}
-                                className="relative h-10 rounded overflow-hidden flex items-center px-4 border border-white/5"
-                                style={{ backgroundColor: cat.bgColor }}
-                            >
-                                {/* Fill */}
-                                <motion.div
-                                    initial={{ width: 0 }}
-                                    whileInView={{ width: cat.total === 0 ? '100%' : `${percentage}%` }}
-                                    viewport={{ once: true }}
-                                    transition={{ duration: 1.5, ease: "easeOut", delay: 0.2 }}
-                                    className="absolute top-0 left-0 bottom-0 z-0 opacity-80"
-                                    style={{ backgroundColor: cat.color }}
-                                />
-
-                                {/* Content */}
-                                <div className="relative z-10 flex justify-between w-full text-white drop-shadow-[0_1px_1px_rgba(0,0,0,0.8)]">
-                                    <span className="font-semibold tracking-wide">{cat.name}</span>
-                                    <span className="font-medium opacity-90 text-sm flex gap-2 items-center">
-                                        <span className="opacity-70">{statsText}</span> 
-                                        <span className="text-[1.05rem]">{displayPerc}</span>
-                                    </span>
+                            <div key={cat.id} className="relative w-full">
+                                {/* Header */}
+                                <div className="flex justify-between items-end mb-3">
+                                    <span className="editorial-heading text-xl md:text-2xl text-[var(--text)]">{cat.name}</span>
+                                    <span className="font-mono text-sm font-bold text-[var(--text-muted)] tracking-widest">{statsText} / {displayPerc}</span>
+                                </div>
+                                {/* Bar */}
+                                <div className="relative h-2 w-full overflow-hidden" style={{ backgroundColor: cat.bgColor }}>
+                                    <motion.div
+                                        initial={{ width: 0 }}
+                                        whileInView={{ width: cat.total === 0 ? '100%' : `${pct}%` }}
+                                        viewport={{ once: true }}
+                                        transition={{ duration: 1.5, ease: "easeOut", delay: 0.2 }}
+                                        className="absolute top-0 left-0 bottom-0"
+                                        style={{ backgroundColor: cat.color }}
+                                    />
                                 </div>
                             </div>
-                        );
+                        )
                     })}
+                    <div className="pt-8 border-t border-gray-200 text-sm font-mono font-bold uppercase tracking-widest text-gray-400">
+                        {stats.footerText}
+                    </div>
                 </div>
+            </div>
 
-                {/* Footer */}
-                <div className="mt-6 text-[var(--muted-foreground)] text-sm font-medium text-right">
-                    {stats.footerText}
-                </div>
-            </motion.div>
         </section>
-    );
+    )
 }
