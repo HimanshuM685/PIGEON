@@ -35,7 +35,7 @@ const testimonials = [
     socials: {
       github: 'https://github.com/RealRatnadwip',
       twitter: 'https://x.com/useridwas_taken',
-      website: 'https://002014.xyz/',
+      website: 'https://ratnadwip.com/',
       email: 'mailto:me@ratnadwip.com',
     },
   },
