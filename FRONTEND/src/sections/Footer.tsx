@@ -52,7 +52,7 @@ export function Footer() {
                                 </a>
                             </li>
                             <li>
-                                <a href="https://github.com/HimanshuM685/PIGEON" target="_blank" rel="noopener noreferrer"
+                                <a href="#docs"
                                     className="text-[13px] text-[rgba(242,242,223,0.7)] hover:text-[var(--bg-yellow)] transition-colors duration-200 inline-flex items-center gap-1">
                                     Docs <ExternalLink size={11} className="opacity-50" />
                                 </a>

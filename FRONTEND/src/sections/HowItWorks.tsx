@@ -72,7 +72,7 @@ export function HowItWorks() {
                                     <step.icon className="w-16 h-16 md:w-24 md:h-24 opacity-80" strokeWidth={1} />
                                     <span className="font-mono text-3xl font-bold opacity-50 uppercase tracking-widest">{step.number}</span>
                                 </div>
-                                <h3 className="editorial-heading text-5xl md:text-7xl lg:text-8xl mb-6 leading-[0.9]">
+                                <h3 className="editorial-heading text-4xl sm:text-5xl md:text-7xl lg:text-8xl mb-6 leading-[0.9] break-words">
                                     {step.title}
                                 </h3>
                                 <p className="font-sans font-medium text-xl md:text-3xl opacity-90 max-w-2xl leading-tight">

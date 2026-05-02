@@ -181,11 +181,12 @@ export const CircularTestimonials = ({
                             key={testimonial.src}
                             src={testimonial.src}
                             alt={testimonial.name}
-                            className="ct-image"
+                            className="ct-image rounded-3xl"
                             data-index={index}
                             style={{
                                 ...getImageStyle(index),
                                 objectPosition: testimonial.objectPosition || "center",
+                                borderRadius: "2rem",
                             }}
                         />
                     ))}

@@ -2,7 +2,8 @@ import { useState, useRef, useEffect } from 'react'
 import { motion } from 'motion/react'
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
-import { Check, Mail, ArrowRight, ShieldCheck, Sparkles, Smartphone } from 'lucide-react'
+import { Check, Mail, ArrowRight, ShieldCheck, Sparkles, Smartphone, AlertCircle } from 'lucide-react'
+import { getWaitlistCount, insertWaitlistEmail } from '@/lib/neon'
 
 gsap.registerPlugin(ScrollTrigger)
 
@@ -11,9 +12,21 @@ type FormState = 'idle' | 'loading' | 'success' | 'error'
 export function Waitlist() {
     const [email, setEmail] = useState('')
     const [state, setState] = useState<FormState>('idle')
+    const [count, setCount] = useState<number | null>(null)
+    const [errorMsg, setErrorMsg] = useState<string | null>(null)
     const containerRef = useRef<HTMLElement>(null)
 
     useEffect(() => {
+        const fetchCount = async () => {
+            try {
+                const c = await getWaitlistCount();
+                setCount(c);
+            } catch (e) {
+                console.error("Count fetch failed", e);
+            }
+        };
+        fetchCount();
+
         if (!containerRef.current) return
         gsap.fromTo(
             containerRef.current.querySelector('.waitlist-content'),
@@ -27,8 +40,19 @@ export function Waitlist() {
         e.preventDefault()
         if (!email) return
         setState('loading')
-        // Simulate API call
-        setTimeout(() => setState('success'), 1500)
+        setErrorMsg(null)
+        
+        try {
+            await insertWaitlistEmail(email)
+            setState('success')
+            // Refresh count
+            const c = await getWaitlistCount()
+            setCount(c)
+        } catch (error) {
+            console.error("Waitlist error:", error)
+            setState('error')
+            setErrorMsg(error instanceof Error ? error.message : "Submission failed")
+        }
     }
 
     return (
@@ -56,7 +80,16 @@ export function Waitlist() {
                         
                         <div className="mb-10">
                             <h3 className="editorial-heading text-3xl mb-2 text-dark-ink">Reserve Spot</h3>
-                            <p className="text-dark-ink/70 font-medium">Limited spots available for the beta release.</p>
+                            <p className="text-dark-ink/70 font-medium mb-4">Limited spots available for the beta release.</p>
+                            <div className="inline-flex items-center gap-2 px-3 py-1 bg-dark-ink/5 rounded-full border border-dark-ink/10">
+                                <span className="relative flex h-2 w-2">
+                                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-green-500 opacity-75"></span>
+                                    <span className="relative inline-flex h-2 w-2 rounded-full bg-green-500"></span>
+                                </span>
+                                <span className="text-[10px] font-bold uppercase tracking-wider text-dark-ink/60">
+                                    {count !== null ? `${count.toLocaleString()}+ Users already joined` : 'Joining the revolution...'}
+                                </span>
+                            </div>
                         </div>
 
                         {state === 'success' ? (
@@ -104,6 +137,12 @@ export function Waitlist() {
                                         </span>
                                     )}
                                 </button>
+                                {state === 'error' && (
+                                    <div className="flex items-center gap-2 text-red-500 text-xs font-bold bg-red-50 p-3 rounded-xl border border-red-100">
+                                        <AlertCircle size={14} />
+                                        <span>{errorMsg}</span>
+                                    </div>
+                                )}
                             </form>
                         )}
 

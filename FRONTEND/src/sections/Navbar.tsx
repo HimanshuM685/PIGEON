@@ -8,7 +8,7 @@ const navLinks = [
     { label: 'Architecture', href: '#architecture' },
     { label: 'Team',         href: '#team' },
     { label: 'Waitlist',     href: '#waitlist' },
-    { label: 'Docs',         href: '#documentation' },
+    { label: 'Docs',         href: '#docs' },
 ]
 
 export function Navbar() {
@@ -94,7 +94,7 @@ export function Navbar() {
 
             {/* Mobile Menu */}
             <div className={cn(
-                'lg:hidden overflow-hidden transition-all duration-500 ease-in-out absolute top-full left-0 right-0 mt-4 mx-2 rounded-3xl rough-glass',
+                'lg:hidden overflow-hidden transition-all duration-500 ease-in-out absolute top-full left-0 right-0 mt-4 mx-2 rounded-3xl backdrop-blur-[60px] bg-white/40',
                 mobileOpen
                     ? 'max-h-[600px] opacity-100 scale-100'
                     : 'max-h-0 opacity-0 scale-95 pointer-events-none'

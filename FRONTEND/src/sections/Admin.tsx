@@ -1,11 +1,20 @@
 import { useState } from 'react';
 import { motion } from 'motion/react';
 import { ShieldCheck, Plus, Settings } from 'lucide-react';
+import { getWaitlistCount } from '@/lib/neon';
+import { useEffect } from 'react';
 
 export function Admin() {
     const [isAuthenticated, setIsAuthenticated] = useState(false);
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
+    const [count, setCount] = useState<number | null>(null);
+
+    useEffect(() => {
+        if (isAuthenticated) {
+            getWaitlistCount().then(setCount).catch(console.error);
+        }
+    }, [isAuthenticated]);
 
     const handleLogin = (e: React.FormEvent) => {
         e.preventDefault();
@@ -101,7 +110,7 @@ export function Admin() {
                             <Plus size={32} />
                         </div>
                         <div className="text-[8rem] font-display leading-none tracking-tighter">
-                            1,492
+                            {count !== null ? count.toLocaleString() : '---'}
                         </div>
                         <p className="font-medium text-xl opacity-80 mt-4">Total waitlist registrations.</p>
                     </div>

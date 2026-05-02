@@ -54,15 +54,15 @@ export function Hero() {
                 
                 {/* Massive Headline */}
                 <div className="flex-1">
-                    <h1 className="font-display flex flex-col uppercase tracking-tighter w-full text-left md:text-left">
+                    <h1 className="font-display flex flex-col uppercase tracking-tighter w-full text-left">
                         <div className="overflow-hidden">
                             <span className="hero-text-anim block text-massive text-dark-ink will-change-transform transform-gpu">SEND</span>
                         </div>
                         <div className="overflow-hidden">
                             <span className="hero-text-anim block text-massive text-dark-ink will-change-transform transform-gpu md:ml-[10vw]">CRYPTO</span>
                         </div>
-                        <div className="overflow-hidden">
-                            <span className="hero-text-anim block text-massive text-dark-ink will-change-transform transform-gpu">VIA SMS.</span>
+                        <div className="overflow-hidden mt-2 md:mt-4">
+                            <span className="hero-text-anim block text-huge text-dark-ink/80 will-change-transform transform-gpu">VIA SMS.</span>
                         </div>
                     </h1>
                 </div>
