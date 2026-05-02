@@ -1,195 +1,111 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { motion } from 'motion/react';
-import { defaultStatsData } from './ProgressStats';
-import type { StatsData, StatCategory } from './ProgressStats';
+import { ShieldCheck, Plus, Settings } from 'lucide-react';
 
 export function Admin() {
     const [isAuthenticated, setIsAuthenticated] = useState(false);
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
-    const [error, setError] = useState('');
-    
-    const [stats, setStats] = useState<StatsData>(defaultStatsData);
-
-    useEffect(() => {
-        const savedAuth = sessionStorage.getItem('pigeon_admin_auth');
-        if (savedAuth === 'true') setIsAuthenticated(true);
-
-        const savedStats = localStorage.getItem('pigeon_stats');
-        if (savedStats) {
-            try {
-                setStats(JSON.parse(savedStats));
-            } catch (e) {
-                console.error(e);
-            }
-        }
-    }, []);
 
     const handleLogin = (e: React.FormEvent) => {
         e.preventDefault();
-        if (username === 'Pigeon' && password === 'nude@69') {
-            setIsAuthenticated(true);
-            sessionStorage.setItem('pigeon_admin_auth', 'true');
-            setError('');
-        } else {
-            setError('Invalid credentials');
-        }
+        if (username === 'admin' && password === 'admin') setIsAuthenticated(true);
+        else alert('Invalid credentials');
     };
 
-    const handleSave = () => {
-        localStorage.setItem('pigeon_stats', JSON.stringify(stats));
-        alert('Stats successfully saved!');
-    };
-
-    const updateCategory = (id: number, field: keyof StatCategory, value: string | number) => {
-        setStats(prev => {
-            const updatedCategories = prev.categories.map(c => c.id === id ? { ...c, [field]: value } : c);
-            const totalTasks = updatedCategories.reduce((sum, cat) => sum + Number(cat.total || 0), 0);
-            const completedTasks = updatedCategories.reduce((sum, cat) => sum + Number(cat.completed || 0), 0);
-            const overallPercentage = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
-            return {
-                ...prev,
-                categories: updatedCategories,
-                totalTasks,
-                overallPercentage
-            };
-        });
-    };
-
-    const addCategory = () => {
-        setStats(prev => ({
-            ...prev,
-            categories: [...prev.categories, {
-                id: Date.now(),
-                name: 'New Category',
-                completed: 0,
-                total: 10,
-                color: '#89933a',
-                bgColor: '#4b5126'
-            }]
-        }));
-    };
-
-    const removeCategory = (id: number) => {
-        setStats(prev => {
-            const updatedCategories = prev.categories.filter(c => c.id !== id);
-            const totalTasks = updatedCategories.reduce((sum, cat) => sum + Number(cat.total || 0), 0);
-            const completedTasks = updatedCategories.reduce((sum, cat) => sum + Number(cat.completed || 0), 0);
-            const overallPercentage = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
-            return {
-                ...prev,
-                categories: updatedCategories,
-                totalTasks,
-                overallPercentage
-            };
-        });
-    };
+    const inputClass = "w-full bg-white/50 border border-dark-ink/10 rounded-2xl px-5 py-4 text-dark-ink text-base outline-none focus:border-dark-ink focus:bg-white transition-all placeholder-dark-ink/50 font-bold";
 
     if (!isAuthenticated) {
         return (
-            <section className="relative min-h-screen pt-32 pb-20 px-6 flex items-center justify-center">
-                <motion.div 
-                    initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
-                    className="w-full max-w-sm glass-strong p-8 rounded-2xl border border-[var(--border)] glow-effect"
-                >
-                    <h2 className="text-3xl font-bold text-white mb-6 text-center">Admin Access</h2>
-                    <form onSubmit={handleLogin} className="space-y-4">
-                        {error && <p className="text-red-400 text-sm text-center">{error}</p>}
-                        <div>
-                            <input
-                                type="text"
-                                placeholder="Username"
-                                value={username}
-                                onChange={e => setUsername(e.target.value)}
-                                className="w-full bg-black/50 border border-[var(--border)] rounded-lg px-4 py-3 text-white focus:outline-none focus:border-[var(--primary)] transition-colors"
-                            />
+            <section id="admin" className="relative w-full flex min-h-screen bg-vibrant-yellow overflow-hidden">
+                <div className="w-full flex flex-col lg:flex-row min-h-screen">
+                    {/* Left Side: Massive Typography */}
+                    <div className="w-full lg:w-1/2 p-12 md:p-24 flex flex-col justify-center border-b lg:border-b-0 lg:border-r border-dark-ink/10 relative">
+                        {/* Background Watermark */}
+                        <div className="absolute top-1/2 left-0 -translate-y-1/2 overflow-hidden pointer-events-none opacity-5">
+                            <span className="font-display text-[30vw] leading-none tracking-tighter text-dark-ink">LOCK</span>
                         </div>
-                        <div>
-                            <input
-                                type="password"
-                                placeholder="Password"
-                                value={password}
-                                onChange={e => setPassword(e.target.value)}
-                                className="w-full bg-black/50 border border-[var(--border)] rounded-lg px-4 py-3 text-white focus:outline-none focus:border-[var(--primary)] transition-colors"
-                            />
+                        <div className="relative z-10">
+                            <ShieldCheck size={64} className="text-dark-ink opacity-80 mb-12" strokeWidth={1.5} />
+                            <h2 className="editorial-heading text-huge leading-none text-dark-ink">
+                                ADMIN<br/>PORTAL.
+                            </h2>
+                            <p className="mt-8 text-xl md:text-3xl font-medium text-dark-ink/80 leading-tight max-w-lg">
+                                Secure system management. Restricted access only.
+                            </p>
                         </div>
-                        <button type="submit" className="w-full bg-[var(--primary)] text-black font-bold py-3 rounded-lg hover:brightness-110 transition-all">
-                            Login
-                        </button>
-                    </form>
-                </motion.div>
+                    </div>
+
+                    {/* Right Side: Rough Glass Login */}
+                    <div className="w-full lg:w-1/2 p-12 md:p-24 flex flex-col justify-center items-center">
+                        <motion.div
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            className="w-full max-w-md rough-glass p-12 text-dark-ink relative overflow-hidden"
+                        >
+                            <h3 className="editorial-heading text-3xl mb-8">Authenticate</h3>
+                            <form onSubmit={handleLogin} className="space-y-6 relative z-10">
+                                <input type="text" placeholder="Username" value={username} onChange={e => setUsername(e.target.value)} className={inputClass} />
+                                <input type="password" placeholder="Password" value={password} onChange={e => setPassword(e.target.value)} className={inputClass} />
+                                <button type="submit" className="btn-editorial w-full bg-dark-ink text-white hover:bg-black mt-4">
+                                    Login Access
+                                </button>
+                            </form>
+                        </motion.div>
+                    </div>
+                </div>
             </section>
         );
     }
 
     return (
-        <section className="relative min-h-screen pt-32 pb-20 px-6">
-            <div className="max-w-4xl mx-auto glass-strong p-8 rounded-2xl border border-[var(--border)] glow-effect text-white">
-                <div className="flex justify-between items-center mb-8">
-                    <h1 className="text-3xl font-bold">Manage Build-In-Public Stats</h1>
-                    <button onClick={handleSave} className="bg-[var(--primary)] text-black font-bold px-6 py-2 rounded-lg hover:brightness-110">
-                        Save Changes
-                    </button>
+        <section id="admin-dashboard" className="w-full bg-[var(--bg)] min-h-screen border-t border-gray-200">
+            {/* Header */}
+            <div className="w-full px-8 py-24 flex flex-col md:flex-row items-start md:items-end justify-between border-b border-gray-200 bg-white">
+                <div>
+                    <span className="mb-4 inline-flex items-center gap-2 px-5 py-2 rounded-full border border-gray-300 text-xs font-bold uppercase tracking-widest text-[var(--text)]">
+                        Dashboard
+                    </span>
+                    <h2 className="editorial-heading text-6xl md:text-8xl text-[var(--text)] leading-none">
+                        SYSTEM<br/>CONTROL.
+                    </h2>
                 </div>
+                <button onClick={() => setIsAuthenticated(false)} className="btn-editorial mt-8 md:mt-0 border border-dark-ink bg-transparent text-dark-ink hover:text-white">
+                    Logout
+                </button>
+            </div>
 
-                <div className="space-y-6">
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div>
-                            <label className="block text-sm text-gray-400 mb-1">Title</label>
-                            <input type="text" value={stats.title} onChange={e => setStats({...stats, title: e.target.value})} className="w-full bg-black/50 border border-[var(--border)] rounded px-3 py-2 text-white" />
+            <div className="w-full max-w-7xl mx-auto px-8 py-24">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
+                    
+                    {/* Settings Block */}
+                    <div className="rough-glass p-12 text-[var(--text)]">
+                        <div className="flex items-center gap-4 mb-8">
+                            <Settings size={32} className="opacity-80" />
+                            <h3 className="editorial-heading text-3xl">Global Settings</h3>
                         </div>
-                        <div>
-                            <label className="block text-sm text-gray-400 mb-1">Overall % (Auto)</label>
-                            <input type="number" readOnly value={stats.overallPercentage} className="w-full bg-black/30 border border-[var(--border)] rounded px-3 py-2 text-gray-400 cursor-not-allowed" />
-                        </div>
-                        <div>
-                            <label className="block text-sm text-gray-400 mb-1">Total Tasks (Auto)</label>
-                            <input type="number" readOnly value={stats.totalTasks} className="w-full bg-black/30 border border-[var(--border)] rounded px-3 py-2 text-gray-400 cursor-not-allowed" />
+                        <div className="space-y-6">
+                            {['Maintenance Mode', 'Beta Signups', 'API Access'].map((setting) => (
+                                <div key={setting} className="flex justify-between items-center p-6 bg-white/50 border border-gray-200 rounded-2xl">
+                                    <span className="font-bold uppercase tracking-widest text-sm">{setting}</span>
+                                    <button className="btn-editorial py-2 px-6 text-xs bg-dark-ink text-white">Toggle</button>
+                                </div>
+                            ))}
                         </div>
                     </div>
 
-                    <div className="border-t border-[var(--border)] pt-6 space-y-4">
-                        <div className="flex justify-between items-center mb-4">
-                            <h3 className="text-xl font-semibold">Categories</h3>
-                            <button onClick={addCategory} className="bg-gray-800 text-white border border-[var(--border)] text-sm font-medium px-4 py-1.5 rounded-lg hover:bg-gray-700 transition-colors">
-                                + Add Category
-                            </button>
+                    {/* Stats Block */}
+                    <div className="rough-glass p-12 bg-vibrant-yellow text-dark-ink border-0">
+                        <div className="flex justify-between items-center mb-12">
+                            <h3 className="editorial-heading text-3xl">Active Users</h3>
+                            <Plus size={32} />
                         </div>
-                        {stats.categories.map((cat) => (
-                            <div key={cat.id} className="grid grid-cols-1 md:grid-cols-[1fr_min-content_min-content_min-content_min-content_min-content] gap-4 items-end bg-black/30 p-4 rounded border border-[var(--border)]">
-                                <div>
-                                    <label className="block text-xs text-gray-400 mb-1">Name</label>
-                                    <input type="text" value={cat.name} onChange={e => updateCategory(cat.id, 'name', e.target.value)} className="w-full bg-black/50 border border-[var(--border)] rounded px-3 py-2 text-white text-sm" />
-                                </div>
-                                <div className="w-20">
-                                    <label className="block text-xs text-gray-400 mb-1">Completed</label>
-                                    <input type="number" value={cat.completed} onChange={e => updateCategory(cat.id, 'completed', Number(e.target.value))} className="w-full bg-black/50 border border-[var(--border)] rounded px-3 py-2 text-white text-sm" />
-                                </div>
-                                <div className="w-20">
-                                    <label className="block text-xs text-gray-400 mb-1">Total</label>
-                                    <input type="number" value={cat.total} onChange={e => updateCategory(cat.id, 'total', Number(e.target.value))} className="w-full bg-black/50 border border-[var(--border)] rounded px-3 py-2 text-white text-sm" />
-                                </div>
-                                <div className="w-20">
-                                    <label className="block text-xs text-gray-400 mb-1">Fill Color</label>
-                                    <input type="color" value={cat.color} onChange={e => updateCategory(cat.id, 'color', e.target.value)} className="w-full h-9 bg-black/50 border border-[var(--border)] rounded p-1 cursor-pointer" />
-                                </div>
-                                <div className="w-20">
-                                    <label className="block text-xs text-gray-400 mb-1">BG Color</label>
-                                    <input type="color" value={cat.bgColor} onChange={e => updateCategory(cat.id, 'bgColor', e.target.value)} className="w-full h-9 bg-black/50 border border-[var(--border)] rounded p-1 cursor-pointer" />
-                                </div>
-                                <div className="w-10 flex justify-center pb-[#2px]">
-                                    <button onClick={() => removeCategory(cat.id)} className="text-red-500 hover:text-red-400 text-2xl font-bold rounded" title="Remove">
-                                        &times;
-                                    </button>
-                                </div>
-                            </div>
-                        ))}
+                        <div className="text-[8rem] font-display leading-none tracking-tighter">
+                            1,492
+                        </div>
+                        <p className="font-medium text-xl opacity-80 mt-4">Total waitlist registrations.</p>
                     </div>
 
-                    <div className="pt-4 border-t border-[var(--border)]">
-                        <label className="block text-sm text-gray-400 mb-1">Footer Text</label>
-                        <input type="text" value={stats.footerText} onChange={e => setStats({...stats, footerText: e.target.value})} className="w-full bg-black/50 border border-[var(--border)] rounded px-3 py-2 text-white" />
-                    </div>
                 </div>
             </div>
         </section>

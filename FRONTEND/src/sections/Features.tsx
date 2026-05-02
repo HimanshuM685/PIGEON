@@ -1,116 +1,66 @@
 'use client';
 
 import {
-    Send,
-    Wallet,
-    History,
-    Brain,
-    KeyRound,
-    PenTool,
-    Smartphone,
-    Blocks,
-    Shield,
+    Send, Wallet, History, Brain, KeyRound,
+    PenTool, Smartphone, Blocks, Shield,
 } from 'lucide-react'
 import { motion, useReducedMotion } from 'motion/react'
-import { FeatureCard } from '@/components/ui/grid-feature-cards'
 
 const features = [
-    {
-        title: 'Send Crypto via SMS',
-        icon: Send,
-        description: 'Transfer ALGO and ASAs with a simple text message. No internet required.',
-    },
-    {
-        title: 'Falcon Post-Quantum',
-        icon: Shield,
-        description: 'Quantum-resistant cryptography protecting your wallet with Falcon signatures.',
-    },
-    {
-        title: 'Check Balance',
-        icon: Wallet,
-        description: 'Query your wallet balance anytime by texting "balance" to the service.',
-    },
-    {
-        title: 'Transaction History',
-        icon: History,
-        description: 'Review past transactions and verify payment status via SMS.',
-    },
-    {
-        title: 'AI Intent Classification',
-        icon: Brain,
-        description: 'Intent parser parses natural language messages to understand user intent.',
-    },
-    {
-        title: 'Encrypted Key Storage',
-        icon: KeyRound,
-        description: 'Wallet mnemonics are AES-encrypted with your password and stored securely on-chain.',
-    },
-    {
-        title: 'Password-Signed Txns',
-        icon: PenTool,
-        description: 'Transactions are signed by decrypting your key with your password. No raw keys ever exposed.',
-    },
-    {
-        title: 'Phone-Number Wallets',
-        icon: Smartphone,
-        description: 'Your phone number IS your wallet. No seed phrases to remember.',
-    },
-    {
-        title: 'Algorand Network',
-        icon: Blocks,
-        description: 'Built on Algorand for instant finality, low-cost transactions, and carbon-negative consensus.',
-    },
+    { title: 'Send via SMS',        icon: Send,       description: 'Transfer ALGO and ASAs via text.', className: 'col-span-12 md:col-span-8 bg-dark-ink text-white p-12 md:p-20' },
+    { title: 'Post-Quantum',        icon: Shield,     description: 'Quantum-resistant Falcon signatures.', className: 'col-span-12 md:col-span-4 bg-vibrant-yellow text-[var(--text)] p-12' },
+    { title: 'AI Intent',           icon: Brain,      description: 'NLP parsing for SMS commands.', className: 'col-span-12 md:col-span-4 bg-[var(--bg-pink)] text-white p-12' },
+    { title: 'Check Balance',       icon: Wallet,     description: 'Text "balance" anytime.', className: 'col-span-12 md:col-span-4 bg-white text-[var(--text)] p-12 border border-gray-200' },
+    { title: 'Txn History',         icon: History,    description: 'Review past transactions via SMS.', className: 'col-span-12 md:col-span-4 bg-[var(--bg-blue)] text-white p-12' },
+    { title: 'Encrypted Keys',      icon: KeyRound,   description: 'AES-encrypted mnemonics stored on-chain.', className: 'col-span-12 md:col-span-6 bg-dark-ink text-white p-12 md:p-20' },
+    { title: 'Phone Wallets',       icon: Smartphone, description: 'Your number IS your wallet.', className: 'col-span-12 md:col-span-6 bg-[var(--bg-purple)] text-white p-12 md:p-20' },
 ]
 
 export function Features() {
     return (
-        <section id="features" className="relative z-10 py-32 md:py-48 px-6">
-            <div className="mx-auto w-full max-w-7xl space-y-16">
-                <AnimatedContainer className="mx-auto max-w-3xl text-center section-header flex flex-col items-center">
-                    <span className="inline-block px-4 py-1.5 text-xs tracking-[0.3em] uppercase font-mono text-[var(--accent)] mb-6">
-                        [ Features ]
+        <section id="features" className="relative z-10 w-full">
+            {/* Boundless Asymmetric Grid */}
+            <div className="grid grid-cols-12 gap-0 w-full">
+                
+                {/* Massive Header Block */}
+                <div className="col-span-12 bg-white text-[var(--text)] px-8 py-32 md:py-48 flex flex-col items-center justify-center text-center border-b border-gray-200">
+                    <span className="mb-6 inline-flex items-center gap-2 px-5 py-2 rounded-full border border-gray-300 text-xs font-bold uppercase tracking-widest">
+                        Core Capabilities
                     </span>
-                    <h2 className="font-display text-5xl md:text-6xl lg:text-7xl xl:text-8xl font-black uppercase tracking-[-0.05em] mb-8 leading-[0.9]">
-                        Everything You Need<br />
-                        <span className="text-[var(--primary)]">Nothing You Don't</span>
+                    <h2 className="editorial-heading text-huge text-[var(--text)]">
+                        EVERYTHING<br/>YOU NEED.
                     </h2>
-                    <p className="text-[var(--muted-foreground)] text-base md:text-lg lg:text-xl leading-relaxed">
-                        A complete crypto wallet experience delivered through the simplicity of SMS.
-                    </p>
-                </AnimatedContainer>
+                </div>
 
-                <AnimatedContainer
-                    delay={0.4}
-                    className="grid grid-cols-1 divide-x divide-y border sm:grid-cols-2 lg:grid-cols-4 divide-white/10 border-white/10"
-                >
-                    {features.map((feature, i) => (
-                        <FeatureCard key={i} feature={feature} />
-                    ))}
-                </AnimatedContainer>
+                {/* Grid Blocks */}
+                {features.map((feature, i) => (
+                    <AnimatedBlock key={i} className={`flex flex-col justify-between ${feature.className}`}>
+                        <div className="flex justify-between items-start mb-16">
+                            <feature.icon className="w-12 h-12 md:w-16 md:h-16 opacity-80" strokeWidth={1.5} />
+                            <span className="font-mono text-xs font-bold opacity-50 uppercase tracking-widest">0{i+1}</span>
+                        </div>
+                        <div>
+                            <h3 className="editorial-heading text-4xl md:text-5xl mb-4 leading-none">{feature.title}</h3>
+                            <p className="font-sans font-medium text-lg md:text-xl opacity-80 max-w-sm">{feature.description}</p>
+                        </div>
+                    </AnimatedBlock>
+                ))}
+
             </div>
         </section>
     )
 }
 
-type ViewAnimationProps = {
-    delay?: number
-    className?: React.ComponentProps<typeof motion.div>['className']
-    children: React.ReactNode
-}
-
-function AnimatedContainer({ className, delay = 0.1, children }: ViewAnimationProps) {
+function AnimatedBlock({ className, children }: { className: string, children: React.ReactNode }) {
     const shouldReduceMotion = useReducedMotion()
-
-    if (shouldReduceMotion) {
-        return <div className={className}>{children}</div>
-    }
+    if (shouldReduceMotion) return <div className={className}>{children}</div>
 
     return (
         <motion.div
-            initial={{ filter: 'blur(4px)', translateY: -8, opacity: 0 }}
-            whileInView={{ filter: 'blur(0px)', translateY: 0, opacity: 1 }}
-            viewport={{ once: true, margin: '-100px' }}
-            transition={{ delay, duration: 0.8 }}
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
+            viewport={{ once: true, margin: '-10%' }}
+            transition={{ duration: 0.8 }}
             className={className}
         >
             {children}

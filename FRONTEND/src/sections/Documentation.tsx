@@ -6,24 +6,23 @@ export function Documentation() {
     const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
-        // Simulate a loading time for the documentation data
-        const timer = setTimeout(() => {
-            setIsLoading(false);
-        }, 1500);
+        const timer = setTimeout(() => { setIsLoading(false); }, 1500);
         return () => clearTimeout(timer);
     }, []);
 
     return (
-        <section id="docs" className="relative min-h-screen pt-32 pb-20 px-6">
+        <section id="docs" className="relative min-h-screen pt-32 pb-20 px-4 sm:px-6">
             <div className="max-w-4xl mx-auto flex flex-col items-center">
                 {isLoading ? (
                     <div className="flex flex-col items-center justify-center min-h-[60vh]">
-                        <Loader2 className="w-12 h-12 text-[var(--primary)] animate-spin mb-4" />
+                        <div className="w-12 h-12 flex items-center justify-center mb-4 bg-[rgba(69,39,118,0.08)] rounded-2xl">
+                            <Loader2 className="w-6 h-6 text-[var(--accent)] animate-spin" />
+                        </div>
                         <motion.p
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
                             transition={{ duration: 0.5, repeat: Infinity, repeatType: "reverse" }}
-                            className="text-[var(--accent)] text-lg"
+                            className="text-[var(--accent)] text-sm font-mono tracking-wider"
                         >
                             Loading Documentation...
                         </motion.p>
@@ -33,54 +32,78 @@ export function Documentation() {
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.8 }}
-                        className="w-full text-left bg-black/40 backdrop-blur-md p-8 md:p-12 rounded-2xl border border-[var(--border)] glow-effect prose prose-invert max-w-none"
+                        className="w-full text-left bg-white/90 p-6 md:p-10 rounded-3xl border border-[var(--border)] shadow-[var(--shadow-lg)] relative"
                     >
-                        <h1 className="text-4xl md:text-5xl font-bold mb-8 text-white">
-                            PIGEON <span className="text-[var(--primary)]">Documentation</span>
+
+                        <h1 className="font-display text-4xl md:text-5xl font-extrabold uppercase tracking-[-0.03em] mb-8 text-[var(--text)]">
+                            PIGEON <span className="text-[var(--accent)]">Docs</span>
                         </h1>
-                        
-                        <div className="space-y-8 text-gray-300">
-                            <div>
-                                <h2 className="text-2xl font-bold text-white mb-4 border-b border-[var(--border)] pb-2">Overview</h2>
-                                <p className="mb-4">
-                                    <strong>PIGEON</strong> is a decentralized mobile wallet platform that enables anyone to send crypto (ALGO on Algorand) over SMS and Telegram without downloading an app or using a browser extension. It combines AI-powered intent parsing with post-quantum cryptography to provide accessible, secure digital asset transfers through messaging platforms.
+
+                        <div className="space-y-8 text-[var(--text-muted)]">
+                            <DocSection title="Overview">
+                                <p className="mb-4 leading-relaxed">
+                                    <strong className="text-[var(--text)]">PIGEON</strong> is a decentralized mobile wallet platform that enables anyone to send
+                                    crypto (ALGO on Algorand) over SMS and Telegram without downloading an app or using a browser
+                                    extension. It combines AI-powered intent parsing with post-quantum cryptography to provide
+                                    accessible, secure digital asset transfers.
                                 </p>
-                                <p className="mb-4">
-                                    PIGEON democratizes crypto access by removing barriers to entry:
-                                </p>
-                                <ul className="list-disc pl-6 mb-4 space-y-2">
-                                    <li><strong>Send ALGO via SMS or Telegram</strong> — Users text commands to receive, store, and send Algorand tokens.</li>
-                                    <li><strong>No app required</strong> — Works on basic SMS and Telegram, making it accessible in emerging markets.</li>
-                                    <li><strong>AI intent parsing</strong> — Natural language commands are interpreted via OpenRouter/Gemma AI.</li>
-                                    <li><strong>Post-quantum secure</strong> — Uses Falcon lattice-based cryptography alongside BIP39 mnemonics for quantum resistance.</li>
+                                <ul className="space-y-2">
+                                    {[
+                                        ['Send ALGO via SMS or Telegram', 'Users text commands to receive, store, and send Algorand tokens.'],
+                                        ['No app required', 'Works on basic SMS and Telegram, accessible in emerging markets.'],
+                                        ['AI intent parsing', 'Natural language commands interpreted via OpenRouter/Gemma AI.'],
+                                        ['Post-quantum secure', 'Falcon lattice-based cryptography alongside BIP39 mnemonics.'],
+                                    ].map(([title, desc]) => (
+                                        <li key={title} className="flex gap-3 items-start">
+                                            <span className="mt-1.5 w-2 h-2 flex-shrink-0 bg-[var(--primary)] rounded-full" />
+                                            <span><strong className="text-[var(--text)]">{title}</strong> — {desc}</span>
+                                        </li>
+                                    ))}
                                 </ul>
-                            </div>
+                            </DocSection>
 
-                            <div>
-                                <h2 className="text-2xl font-bold text-white mb-4 border-b border-[var(--border)] pb-2">Architecture</h2>
-                                <h3 className="text-xl font-semibold text-white mt-4 mb-2">Communication Flow</h3>
-                                <p className="mb-2"><strong>Telegram:</strong> User sends command &rarr; Telegram Bot &rarr; Intent parser extracts action &rarr; Identity resolver finds recipient &rarr; Action executed &rarr; Response returned.</p>
-                                <p className="mb-4"><strong>SMS:</strong> User sends SMS &rarr; Gateway webhook &rarr; Backend processes &rarr; Two-step verification &rarr; Response returned.</p>
-                                <h3 className="text-xl font-semibold text-white mt-4 mb-2">On-Chain Persistence</h3>
-                                <p className="mb-4">Wallet data created &rarr; Mnemonic encrypted with AES-256-GCM + PBKDF2 &rarr; Stored in Algorand smart contract (ContractPigeon) &rarr; Referenced by phone number or Telegram user ID.</p>
-                            </div>
+                            <DocSection title="Architecture">
+                                <p className="mb-3 leading-relaxed">
+                                    <strong className="text-[var(--text)]">Telegram:</strong> User sends command → Telegram Bot → Intent parser → Identity resolver → Action executed → Response returned.
+                                </p>
+                                <p className="mb-3 leading-relaxed">
+                                    <strong className="text-[var(--text)]">SMS:</strong> User sends SMS → Gateway webhook → Backend processes → Two-step verification → Response returned.
+                                </p>
+                                <p className="leading-relaxed">
+                                    <strong className="text-[var(--text)]">On-Chain:</strong> Wallet data → Mnemonic encrypted with AES-256-GCM + PBKDF2 → Stored in Algorand smart contract → Referenced by phone number or Telegram user ID.
+                                </p>
+                            </DocSection>
 
-                            <div>
-                                <h2 className="text-2xl font-bold text-white mb-4 border-b border-[var(--border)] pb-2">Smart Contracts</h2>
-                                <p className="mb-4">The core on-chain registry stores encrypted wallet data indexed by identity (phone number or Telegram ID). By key design, it stores only encrypted mnemonics, preventing plaintext exposure and minimizing on-chain footprint. It supports mapped lookups via an admin-gated architecture.</p>
-                            </div>
+                            <DocSection title="Smart Contracts">
+                                <p className="leading-relaxed">
+                                    The core on-chain registry stores encrypted wallet data indexed by identity. By design it stores only encrypted mnemonics, preventing plaintext exposure. Supports mapped lookups via an admin-gated architecture.
+                                </p>
+                            </DocSection>
 
-                            <div>
-                                <h2 className="text-2xl font-bold text-white mb-4 border-b border-[var(--border)] pb-2">Post-Quantum Wallet Security</h2>
-                                <h3 className="text-xl font-semibold text-white mt-4 mb-2">Hybrid Approach</h3>
-                                <p className="mb-4">A BIP39 Mnemonic derives both standard Algorand addresses and Falcon post-quantum keypairs. This ensures compatibility with standard transfers while providing lattice-based, NIST-standardized quantum resistance via Falcon signatures.</p>
-                                <h3 className="text-xl font-semibold text-white mt-4 mb-2">Encryption Pipeline</h3>
-                                <p className="mb-4">User passwords undergo PBKDF2 derivation (100,000 iterations, SHA-256) to create an encryption key. The mnemonic is then encrypted via AES-256-GCM. Passwords are never stored; decryption happens entirely on demand during sensitive operations.</p>
-                            </div>
+                            <DocSection title="Post-Quantum Wallet Security">
+                                <p className="mb-3 leading-relaxed">
+                                    <strong className="text-[var(--text)]">Hybrid Approach:</strong> A BIP39 Mnemonic derives both standard Algorand addresses and Falcon post-quantum keypairs, ensuring compatibility with standard transfers while providing lattice-based quantum resistance.
+                                </p>
+                                <p className="leading-relaxed">
+                                    <strong className="text-[var(--text)]">Encryption Pipeline:</strong> User passwords undergo PBKDF2 derivation (100,000 iterations, SHA-256) to create an encryption key. The mnemonic is encrypted via AES-256-GCM. Passwords are never stored.
+                                </p>
+                            </DocSection>
                         </div>
                     </motion.div>
                 )}
             </div>
         </section>
+    );
+}
+
+function DocSection({ title, children }: { title: string; children: React.ReactNode }) {
+    return (
+        <div>
+            <h2 className="font-display text-xl font-bold uppercase tracking-wide text-[var(--text)] mb-4 pb-2 border-b border-[var(--border)] flex items-center gap-2">
+                <span className="w-2.5 h-2.5 bg-[var(--primary)] flex-shrink-0 rounded-full" />
+                {title}
+            </h2>
+            {children}
+        </div>
     );
 }

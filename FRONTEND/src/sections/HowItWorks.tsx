@@ -6,182 +6,60 @@ import { MessageSquare, Brain, Shield, Radio, CheckCircle } from 'lucide-react'
 gsap.registerPlugin(ScrollTrigger)
 
 const steps = [
-    {
-        icon: MessageSquare,
-        number: '01',
-        title: 'User Sends SMS',
-        description: '"Send 30 ALGO to 9912345678"',
-        color: '#06B6D4',
-    },
-    {
-        icon: Brain,
-        number: '02',
-        title: 'AI Parses Intent',
-        description: 'Intent parser extracts: intent=send, amount=30, asset=ALGO, to=9912345678',
-        color: '#8B5CF6',
-    },
-    {
-        icon: Shield,
-        number: '03',
-        title: 'Decrypt & Sign',
-        description: 'Your wallet mnemonic is decrypted with your password and the transaction is signed locally.',
-        color: '#F59E0B',
-    },
-    {
-        icon: Radio,
-        number: '04',
-        title: 'Broadcast to Chain',
-        description: 'Signed transaction is broadcast to Algorand for execution.',
-        color: '#EF4444',
-    },
-    {
-        icon: CheckCircle,
-        number: '05',
-        title: 'SMS Confirmation',
-        description: 'User receives an SMS with the transaction hash and status.',
-        color: '#10B981',
-    },
+    { icon: MessageSquare, number: '01', title: 'User Sends SMS',     description: '"Send 30 ALGO to 9912345678"',                                                                     bg: 'bg-dark-ink', text: 'text-white' },
+    { icon: Brain,         number: '02', title: 'AI Parses Intent',   description: 'Intent parser extracts: intent=send, amount=30, asset=ALGO, to=9912345678',                         bg: 'bg-vibrant-yellow', text: 'text-[var(--text)]' },
+    { icon: Shield,        number: '03', title: 'Decrypt & Sign',     description: 'Your wallet mnemonic is decrypted with your password and the transaction is signed locally.',        bg: 'bg-[var(--bg-pink)]', text: 'text-white' },
+    { icon: Radio,         number: '04', title: 'Broadcast',          description: 'Signed transaction is broadcast to Algorand for execution.',                                        bg: 'bg-[var(--bg-purple)]', text: 'text-white' },
+    { icon: CheckCircle,   number: '05', title: 'SMS Confirmation',   description: 'User receives an SMS with the transaction hash and status.',                                         bg: 'bg-white', text: 'text-[var(--text)]' },
 ]
 
 export function HowItWorks() {
-    const sectionRef = useRef<HTMLElement>(null)
-    const stepsRef = useRef<HTMLDivElement[]>([])
-    const lineRef = useRef<HTMLDivElement>(null)
-
-    useEffect(() => {
-        if (!sectionRef.current) return
-
-        // Header — scrub animation
-        gsap.fromTo(
-            sectionRef.current.querySelector('.section-header'),
-            { opacity: 0, y: 60 },
-            {
-                opacity: 1,
-                y: 0,
-                duration: 1,
-                ease: 'power3.out',
-                scrollTrigger: {
-                    trigger: sectionRef.current,
-                    start: 'top 80%',
-                    end: 'top 50%',
-                    scrub: 1,
-                },
-            }
-        )
-
-        // Vertical line — grow with scrub
-        if (lineRef.current) {
-            gsap.fromTo(
-                lineRef.current,
-                { scaleY: 0 },
-                {
-                    scaleY: 1,
-                    scrollTrigger: {
-                        trigger: sectionRef.current.querySelector('.timeline-container'),
-                        start: 'top 70%',
-                        end: 'bottom 60%',
-                        scrub: 1,
-                    },
-                }
-            )
-        }
-
-        // Steps — staggered 3D entrance with scrub
-        stepsRef.current.forEach((step, i) => {
-            const isLeft = i % 2 === 0
-            gsap.fromTo(
-                step,
-                {
-                    opacity: 0,
-                    x: isLeft ? -120 : 120,
-                    rotateY: isLeft ? 15 : -15,
-                    scale: 0.85,
-                },
-                {
-                    opacity: 1,
-                    x: 0,
-                    rotateY: 0,
-                    scale: 1,
-                    duration: 1.5,
-                    ease: 'power4.out',
-                    scrollTrigger: {
-                        trigger: step,
-                        start: 'top 90%',
-                        end: 'top 50%',
-                        scrub: 1.5,
-                    },
-                }
-            )
-        })
-    }, [])
+    const containerRef = useRef<HTMLElement>(null)
 
     return (
-        <section id="how-it-works" ref={sectionRef} className="relative z-10 py-32 md:py-48 px-6">
-            <div className="max-w-5xl mx-auto">
-                {/* Header */}
-                <div className="section-header flex flex-col items-center text-center mb-32">
-                    <span className="inline-block px-4 py-1.5 text-xs tracking-[0.3em] uppercase font-mono text-[var(--primary)] mb-6">
-                        [ How It Works ]
-                    </span>
-                    <h2 className="font-display text-5xl md:text-6xl lg:text-7xl xl:text-8xl font-black uppercase tracking-[-0.05em] mb-8 leading-[0.9]">
-                        SMS To<br />
-                        <span className="text-[var(--primary)]">Blockchain</span>
-                    </h2>
-                    <p className="text-[var(--muted-foreground)] max-w-3xl text-base md:text-lg lg:text-xl leading-relaxed">
-                        Five simple steps. One powerful pipeline.
-                    </p>
-                </div>
+        <section id="how-it-works" ref={containerRef} className="relative w-full z-20">
+            {/* Header */}
+            <div className="w-full bg-[var(--bg)] text-[var(--text)] px-8 py-32 md:py-48 flex flex-col items-center justify-center text-center border-b border-gray-200">
+                <span className="mb-6 inline-flex items-center gap-2 px-5 py-2 rounded-full border border-gray-300 text-xs font-bold uppercase tracking-widest">
+                    The Pipeline
+                </span>
+                <h2 className="editorial-heading text-huge">
+                    HOW IT<br/>WORKS.
+                </h2>
+            </div>
 
-                {/* Steps Timeline */}
-                <div className="timeline-container perspective-container relative">
-                    {/* Vertical line */}
-                    <div
-                        ref={lineRef}
-                        className="absolute left-8 md:left-1/2 top-0 bottom-0 w-px bg-gradient-to-b from-[var(--accent)] via-[var(--primary)] to-[#10B981] origin-top"
-                    />
+            {/* Overlapping Sticky Steps */}
+            <div className="relative">
+                {steps.map((step, i) => (
+                    <div 
+                        key={step.number}
+                        className={`sticky top-0 w-full min-h-screen flex items-center justify-center overflow-hidden ${step.bg} ${step.text} border-t border-black/10`}
+                        style={{ zIndex: i + 1 }}
+                    >
+                        {/* Massive Background Number */}
+                        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none opacity-[0.05] select-none flex">
+                            <span className="font-display text-[50vw] leading-none tracking-tighter">
+                                {step.number}
+                            </span>
+                        </div>
 
-                    <div className="flex flex-col gap-14">
-                        {steps.map((step, i) => (
-                            <div
-                                key={step.number}
-                                ref={(el) => { if (el) stepsRef.current[i] = el }}
-                                className={`card-3d flex items-start gap-6 md:gap-12 ${i % 2 === 0 ? 'md:flex-row' : 'md:flex-row-reverse'
-                                    }`}
-                            >
-                                {/* Step Content */}
-                                <div className={`flex-1 ${i % 2 === 0 ? 'md:text-right' : 'md:text-left'} pl-20 md:pl-0`}>
-                                    <div className="spotlight-card p-6 group">
-                                        <div className="flex items-center gap-3 mb-3" style={{ justifyContent: i % 2 === 0 ? 'flex-end' : 'flex-start' }}>
-                                            <span className="text-xs font-mono font-bold" style={{ color: step.color }}>
-                                                {step.number}
-                                            </span>
-                                            <h3 className="text-base font-bold">{step.title}</h3>
-                                        </div>
-                                        <p className="text-sm text-[var(--muted-foreground)] font-mono leading-relaxed">
-                                            {step.description}
-                                        </p>
-                                    </div>
+                        {/* Content */}
+                        <div className="relative z-10 w-full max-w-7xl mx-auto px-8 py-24 flex flex-col md:flex-row items-start md:items-center justify-between gap-12">
+                            <div className="flex-1">
+                                <div className="flex items-center gap-6 mb-8">
+                                    <step.icon className="w-16 h-16 md:w-24 md:h-24 opacity-80" strokeWidth={1} />
+                                    <span className="font-mono text-3xl font-bold opacity-50 uppercase tracking-widest">{step.number}</span>
                                 </div>
-
-                                {/* Center Icon */}
-                                <div className="absolute left-4 md:left-1/2 md:-translate-x-1/2 flex-shrink-0">
-                                    <div
-                                        className="w-9 h-9 rounded-full flex items-center justify-center text-white shadow-lg"
-                                        style={{
-                                            backgroundColor: step.color,
-                                            boxShadow: `0 0 20px ${step.color}40`,
-                                        }}
-                                    >
-                                        <step.icon size={16} />
-                                    </div>
-                                </div>
-
-                                {/* Spacer for alternating layout */}
-                                <div className="flex-1 hidden md:block" />
+                                <h3 className="editorial-heading text-5xl md:text-7xl lg:text-8xl mb-6 leading-[0.9]">
+                                    {step.title}
+                                </h3>
+                                <p className="font-sans font-medium text-xl md:text-3xl opacity-90 max-w-2xl leading-tight">
+                                    {step.description}
+                                </p>
                             </div>
-                        ))}
+                        </div>
                     </div>
-                </div>
+                ))}
             </div>
         </section>
     )

@@ -1,120 +1,107 @@
 import { useEffect, useRef } from 'react'
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
-import { LiquidButton } from '@/components/ui/liquid-glass-button'
 
 gsap.registerPlugin(ScrollTrigger)
 
 export function Hero() {
-    const headlineRef = useRef<HTMLHeadingElement>(null)
-    const subtitleRef = useRef<HTMLParagraphElement>(null)
-    const ctaRef = useRef<HTMLDivElement>(null)
-    const badgeRef = useRef<HTMLDivElement>(null)
-    const containerRef = useRef<HTMLDivElement>(null)
+    const heroRef = useRef<HTMLElement>(null)
+    const glassRef = useRef<HTMLDivElement>(null)
 
     useEffect(() => {
-        const tl = gsap.timeline({ defaults: { ease: 'power3.out' } })
+        if (!heroRef.current) return;
+        
+        const tl = gsap.timeline({ defaults: { ease: 'power4.out' } });
+        tl.fromTo('.hero-text-anim', 
+            { y: '100%', opacity: 0, rotate: 5 }, 
+            { y: '0%', opacity: 1, rotate: 0, duration: 1.2, stagger: 0.1 }
+        );
 
-        tl.fromTo(badgeRef.current,
-            { opacity: 0, y: 20 },
-            { opacity: 1, y: 0, duration: 0.6 }
-        )
-            .fromTo(headlineRef.current,
-                { opacity: 0, y: 40 },
-                { opacity: 1, y: 0, duration: 0.8 },
-                '-=0.3'
-            )
-            .fromTo(subtitleRef.current,
-                { opacity: 0, y: 30 },
-                { opacity: 1, y: 0, duration: 0.7 },
-                '-=0.4'
-            )
-            .fromTo(ctaRef.current,
-                { opacity: 0, y: 20 },
-                { opacity: 1, y: 0, duration: 0.6 },
-                '-=0.3'
-            )
+        tl.fromTo(glassRef.current,
+            { opacity: 0, scale: 0.95, y: 50 },
+            { opacity: 1, scale: 1, y: 0, duration: 1 },
+            '-=0.8'
+        );
 
-        // Storytelling scroll transition (Fade and parallax out)
-        // Storytelling scroll transition (Fade and parallax out)
-        gsap.to(containerRef.current, {
-            y: 150,
+        gsap.to(heroRef.current.querySelector('.hero-bg-text'), {
+            y: 200,
             opacity: 0,
-            scale: 0.95,
-            ease: 'none',
             scrollTrigger: {
-                trigger: '#home',
+                trigger: heroRef.current,
                 start: 'top top',
                 end: 'bottom top',
-                scrub: true,
-            },
-        })
+                scrub: true
+            }
+        });
     }, [])
 
     return (
-        <section id="home" className="relative min-h-screen flex items-center justify-center overflow-hidden">
-            {/* Content overlay */}
-            <div className="relative z-10 w-full max-w-[95vw] mx-auto px-4 sm:px-6 text-center">
-                <div ref={containerRef} className="py-20 md:py-40 flex flex-col items-center">
-                    {/* Badge */}
-                    <div ref={badgeRef} className="mb-6 inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-[var(--border)] glass">
-                        <span className="relative flex h-2.5 w-2.5 items-center justify-center">
-                            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-green-500 opacity-75"></span>
-                            <span className="relative inline-flex h-2 w-2 rounded-full bg-green-500"></span>
+        <section
+            id="home"
+            ref={heroRef}
+            className="relative min-h-screen flex items-end px-4 sm:px-8 pb-12 pt-32 overflow-hidden bg-vibrant-yellow"
+        >
+            {/* Massive Background Text Watermark */}
+            <div className="absolute top-1/2 left-0 -translate-y-1/2 w-full overflow-hidden pointer-events-none opacity-20 select-none flex">
+                <span className="hero-bg-text font-display text-[25vw] leading-[0.8] tracking-tighter whitespace-nowrap text-dark-ink">
+                    PIGEON
+                </span>
+            </div>
+
+            <div className="relative z-10 w-full flex flex-col md:flex-row justify-between items-end gap-12">
+                
+                {/* Massive Headline */}
+                <div className="flex-1 overflow-hidden">
+                    <h1 className="font-display flex flex-col uppercase tracking-tighter w-full">
+                        <div className="overflow-hidden">
+                            <span className="hero-text-anim block text-massive text-dark-ink">SEND</span>
+                        </div>
+                        <div className="overflow-hidden">
+                            <span className="hero-text-anim block text-massive text-dark-ink" style={{ marginLeft: '10vw' }}>CRYPTO</span>
+                        </div>
+                        <div className="overflow-hidden">
+                            <span className="hero-text-anim block text-massive text-dark-ink">VIA SMS.</span>
+                        </div>
+                    </h1>
+                </div>
+
+                {/* Rough Glass CTA Box */}
+                <div 
+                    ref={glassRef} 
+                    className="w-full md:w-[400px] lg:w-[450px] flex-shrink-0 rough-glass p-8 flex flex-col gap-6"
+                >
+                    <div className="inline-flex items-center gap-3">
+                        <span className="relative flex h-3 w-3">
+                            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-dark-ink opacity-75"></span>
+                            <span className="relative inline-flex h-3 w-3 rounded-full bg-dark-ink"></span>
                         </span>
-                        <span className="text-xs text-green-400 font-mono">Building the Future of Payments</span>
+                        <span className="text-xs font-bold tracking-widest uppercase text-dark-ink">
+                            Powered by Falcon
+                        </span>
                     </div>
 
-                    {/* Headline */}
-                    <h1
-                        ref={headlineRef}
-                        className="font-display mb-12 text-white text-center tracking-[-0.05em] leading-[0.9] uppercase"
-                    >
-                        <span className="block font-black text-[clamp(4rem,14vw,14rem)]">
-                            Send Crypto
-                        </span>
-                        <span className="block font-light text-[var(--primary)] text-[clamp(3rem,10vw,10rem)] -mt-2 md:-mt-6">
-                            Via SMS
-                        </span>
-                    </h1>
-
-                    {/* Subtitle */}
-                    <p
-                        ref={subtitleRef}
-                        className="font-sans text-[var(--muted-foreground)] text-center text-base md:text-xl lg:text-2xl max-w-3xl mx-auto leading-relaxed mb-6"
-                    >
-                        PIGEON lets anyone send and receive crypto on Algorand using simple text messages.
-                        Powered by Falcon post-quantum cryptography and encrypted wallet management.
+                    <p className="text-dark-ink font-medium text-lg leading-snug">
+                        PIGEON brings the Algorand blockchain to any mobile device in the world, no internet required. Post-quantum secure.
                     </p>
 
-                    {/* Status indicator */}
-                    <div className="my-6 flex items-center justify-center gap-2">
-                        <span className="relative flex h-3 w-3 items-center justify-center">
-                            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[var(--primary)] opacity-75"></span>
-                            <span className="relative inline-flex h-2 w-2 rounded-full bg-[var(--primary)]"></span>
-                        </span>
-                        <p className="text-xs text-[var(--primary-light)] font-mono">Built on Algorand</p>
-                    </div>
-
-                    {/* CTA Buttons */}
-                    <div ref={ctaRef} className="flex flex-col sm:flex-row items-center justify-center gap-4 mt-8">
-                        <LiquidButton
-                            className="text-white border border-[var(--primary)]/30 rounded-full"
-                            size="xl"
+                    <div className="flex flex-col gap-3 mt-4">
+                        <button
                             onClick={() => document.getElementById('about')?.scrollIntoView({ behavior: 'smooth' })}
+                            className="btn-editorial w-full"
                         >
-                            Explore PIGEON
-                        </LiquidButton>
+                            Explore Platform
+                        </button>
                         <a
                             href="https://github.com/HimanshuM685/PIGEON"
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="px-8 py-3 rounded-full text-sm font-medium border border-[var(--border)] text-[var(--muted-foreground)] hover:border-[var(--primary)] hover:text-white transition-all duration-300"
+                            className="btn-editorial w-full bg-transparent border-2 border-[var(--text)] text-[var(--text)] hover:text-white"
                         >
-                            View on GitHub →
+                            GitHub
                         </a>
                     </div>
                 </div>
+
             </div>
         </section>
     )
