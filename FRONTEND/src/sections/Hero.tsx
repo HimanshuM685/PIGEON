@@ -40,7 +40,7 @@ export function Hero() {
         <section
             id="home"
             ref={heroRef}
-            className="relative min-h-screen flex items-end px-4 sm:px-8 pb-12 pt-32 overflow-hidden bg-vibrant-yellow"
+            className="relative min-h-screen flex items-end px-6 sm:px-8 pb-12 pt-32 overflow-hidden bg-vibrant-yellow"
         >
             {/* Massive Background Text Watermark */}
             <div className="absolute top-1/2 left-0 -translate-y-1/2 w-full overflow-hidden pointer-events-none opacity-10 md:opacity-20 select-none flex will-change-transform transform-gpu">
@@ -49,11 +49,11 @@ export function Hero() {
                 </span>
             </div>
 
-            <div className="relative z-10 w-full flex flex-col md:flex-row justify-between items-end gap-12">
+            <div className="relative z-10 w-full flex flex-col md:flex-row justify-between items-end gap-16 md:gap-12">
                 
                 {/* Massive Headline */}
                 <div className="flex-1">
-                    <h1 className="font-display flex flex-col uppercase tracking-tighter w-full">
+                    <h1 className="font-display flex flex-col uppercase tracking-tighter w-full text-left md:text-left">
                         <div className="overflow-hidden">
                             <span className="hero-text-anim block text-massive text-dark-ink will-change-transform transform-gpu">SEND</span>
                         </div>
@@ -69,7 +69,7 @@ export function Hero() {
                 {/* Rough Glass CTA Box */}
                 <div 
                     ref={glassRef} 
-                    className="w-full md:w-[400px] lg:w-[450px] flex-shrink-0 rough-glass p-8 flex flex-col gap-6"
+                    className="w-full md:w-[400px] lg:w-[450px] flex-shrink-0 rough-glass p-8 md:p-10 flex flex-col gap-6"
                 >
                     <div className="inline-flex items-center gap-3">
                         <span className="relative flex h-3 w-3">

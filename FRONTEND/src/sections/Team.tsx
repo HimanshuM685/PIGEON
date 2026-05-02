@@ -18,7 +18,7 @@ const testimonials = [
     name: 'Koushik Mondal',
     designation: 'Frontend Engineer',
     quote: "Designing a seamless and engaging user interface was critical. We wanted the experience to feel magical, blending advanced technology with intuitive design.",
-    src: '/team/koushik.jpg',
+    src: '/team/koushik.jpeg',
     objectPosition: 'top',
   },
 ];
