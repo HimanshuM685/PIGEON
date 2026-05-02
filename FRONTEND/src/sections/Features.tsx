@@ -2,7 +2,7 @@
 
 import {
     Send, Wallet, History, Brain, KeyRound,
-    PenTool, Smartphone, Blocks, Shield,
+    Smartphone, Shield,
 } from 'lucide-react'
 import { motion, useReducedMotion } from 'motion/react'
 

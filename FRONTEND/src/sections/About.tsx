@@ -1,5 +1,5 @@
 import { Globe, Users, Zap } from 'lucide-react'
-import { motion, useReducedMotion } from 'motion/react'
+
 
 export function About() {
     return (

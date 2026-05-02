@@ -26,7 +26,7 @@ export function Architecture() {
 
             {/* Boundless Nodes Grid */}
             <div className="grid grid-cols-1 md:grid-cols-5 w-full">
-                {nodes.map((node, index) => (
+                {nodes.map((node) => (
                     <div key={node.id} className={`col-span-1 border-b md:border-b-0 md:border-r border-white/10 flex flex-col items-center text-center p-12 md:p-16 transition-colors duration-500 hover:bg-white/5`}>
                         <div 
                             className="w-24 h-24 mb-10 flex items-center justify-center rounded-full text-dark-ink"

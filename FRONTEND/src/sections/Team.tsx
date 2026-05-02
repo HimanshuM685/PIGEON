@@ -5,13 +5,13 @@ const testimonials = [
     name: 'Real Ratnadwip',
     designation: 'PIGEON Founder',
     quote: "We're not just building a wallet, we're building the future of financial inclusion. PIGEON is designed to be accessible to anyone, anywhere.",
-    image: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=1000&auto=format&fit=crop',
+    src: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=1000&auto=format&fit=crop',
   },
   {
     name: 'Himanshu M.',
     designation: 'Lead Engineer',
     quote: "Integrating post-quantum Falcon signatures on Algorand through an SMS interface was challenging, but the result is a perfectly secure, seamless experience.",
-    image: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?q=80&w=1000&auto=format&fit=crop',
+    src: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?q=80&w=1000&auto=format&fit=crop',
   },
 ];
 
