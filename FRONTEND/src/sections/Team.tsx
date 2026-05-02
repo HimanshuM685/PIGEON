@@ -18,7 +18,7 @@ const testimonials = [
     name: 'Koushik Mondal',
     designation: 'Frontend Developer',
     quote: "Developed the user interface, focusing on performance, responsiveness, and seamless user experience.",
-    src: '/team/koushik.jpeg',
+    src: '/team/koushik.jpg',
     objectPosition: 'top',
     socials: {
       github: 'https://github.com/Koushikmondal06',
@@ -35,7 +35,7 @@ const testimonials = [
     socials: {
       github: 'https://github.com/RealRatnadwip',
       twitter: 'https://x.com/useridwas_taken',
-      website: 'https://002014.xyz/',
+      website: 'https://ratnadwip.com/',
       email: 'mailto:me@ratnadwip.com',
     },
   },
