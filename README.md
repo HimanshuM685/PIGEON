@@ -66,7 +66,28 @@ npm run dev
 
 That's it. The server starts on `http://localhost:3000` and the Telegram bot (if configured) starts polling automatically.
 
-### 4. Deploy the smart contract (if not already deployed)
+### 4. Deploy with Docker (production)
+
+```bash
+cd Backend
+cp .env.example .env
+nano .env  # fill in your real secrets
+docker compose up -d --build
+```
+
+The container compiles the Falcon CLI, transpiles TypeScript, and starts the server on port `3000` with automatic restarts. To view logs:
+
+```bash
+docker compose logs -f
+```
+
+To stop:
+
+```bash
+docker compose down
+```
+
+### 5. Deploy the smart contract (if not already deployed)
 
 ```bash
 cd Pigeon-Contract/projects/Pigeon-Contract

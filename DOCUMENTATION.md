@@ -136,3 +136,40 @@ Contract:
 Extended backend PQ doc:
 1. `Backend/POST_QUANTUM_WALLET.md`
 
+## 8. Docker deployment
+
+### 8.1 Architecture
+
+The backend uses a multi-stage Docker build:
+
+1. **Builder stage** (`node:20-slim` + `build-essential`)
+   - Installs all dependencies (including devDependencies for `tsc`).
+   - Compiles the Falcon CLI from C sources (`falcon-main/`).
+   - Transpiles TypeScript to `dist/`.
+2. **Runtime stage** (`node:20-slim`)
+   - Installs production-only dependencies.
+   - Copies compiled JS output and the Falcon CLI binary.
+   - Runs `node dist/server.js`.
+
+### 8.2 Files
+
+| File | Purpose |
+|------|---------|
+| `Backend/Dockerfile` | Multi-stage build (compile C + TS → lean production image) |
+| `Backend/docker-compose.yml` | Single-command deploy, reads `.env`, auto-restart |
+| `Backend/.dockerignore` | Excludes `node_modules`, `dist`, `.env`, dev files from build context |
+
+### 8.3 Usage
+
+```bash
+cd Backend
+cp .env.example .env
+nano .env                        # fill in secrets
+docker compose up -d --build     # build & start in background
+docker compose logs -f           # tail logs
+docker compose down              # stop
+```
+
+The server listens on port `3000` (configurable via `PORT` in `.env`).
+Container restarts automatically on crash (`unless-stopped` policy).
+
