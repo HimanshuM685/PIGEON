@@ -94,7 +94,7 @@ function getSmsGateAuthHeader(): string | null {
  * Send an SMS reply through the SMSGate API.
  * Requires SMSGATE_USERNAME and SMSGATE_PASSWORD env vars.
  */
-async function sendSmsViaSmsGate(to: string, content: string): Promise<{ success: boolean; error?: string }> {
+async function sendSmsViaSmsGate(to: string, content: string, simNumber?: number): Promise<{ success: boolean; error?: string }> {
   const authHeader = getSmsGateAuthHeader();
 
   if (!authHeader) {
@@ -118,6 +118,7 @@ async function sendSmsViaSmsGate(to: string, content: string): Promise<{ success
         phoneNumbers: [to],
         message: safeContent,
         ...(process.env.SMSGATE_DEVICE_ID && { deviceId: process.env.SMSGATE_DEVICE_ID }),
+        ...(simNumber !== undefined && { simNumber }),
       }),
     });
 
@@ -567,9 +568,16 @@ async function executeLinkOtpVerify(
  */
 export function setupWebhookRoutes(app: express.Express): void {
 
-  // ── Dedup: track recently processed event IDs ───────────────────────────
-  const processedEvents = new Set<string>();
+  // ── Dedup: track recently processed message IDs ──────────────────────────
+  // SMSGate may deliver the same SMS with different envelope IDs but the
+  // same payload.messageId (content-hash). We dedup on BOTH to be safe.
+  const processedIds = new Set<string>();
   const DEDUP_TTL_MS = 5 * 60 * 1000; // keep IDs for 5 minutes
+
+  function markProcessed(id: string): void {
+    processedIds.add(id);
+    setTimeout(() => processedIds.delete(id), DEDUP_TTL_MS);
+  }
 
   const handleSmsGateWebhook = async (req: express.Request, res: express.Response) => {
     try {
@@ -585,6 +593,7 @@ export function setupWebhookRoutes(app: express.Express): void {
       let senderPhone = '';
       let smsContent = '';
       let eventId = '';
+      let simNumber: number | undefined;
 
       // ── SMSGate webhook sends an envelope: { deviceId, event, id, payload: {...}, webhookId }
       const envelope = body as Partial<SmsGateWebhookEnvelope>;
@@ -595,6 +604,7 @@ export function setupWebhookRoutes(app: express.Express): void {
         senderPhone = p.sender || p.phoneNumber || '';
         smsContent = p.message || '';
         eventId = envelope.id || p.messageId || '';
+        simNumber = p.simNumber;
 
         if (envelope.event !== 'sms:received') {
           console.log(`[SMSGate] Ignoring non-sms:received event: ${envelope.event}`);
@@ -619,18 +629,22 @@ export function setupWebhookRoutes(app: express.Express): void {
 
       console.log(`[SMSGate] Event received: sms:received | id=${eventId || 'n/a'}`);
 
-      // ── Deduplicate: skip if we already processed this event ID ─────────
-      if (eventId && processedEvents.has(eventId)) {
-        console.log(`[SMSGate] Duplicate event ignored: ${eventId}`);
+      // ── Deduplicate: skip if we already processed this message ──────────
+      // Use messageId (content-hash, stable across retries) as primary key,
+      // fall back to envelope id if messageId is missing.
+      const messageId = (envelope.payload as any)?.messageId || '';
+      const dedupKey = messageId || eventId;
+
+      if (dedupKey && processedIds.has(dedupKey)) {
+        console.log(`[SMSGate] Duplicate ignored (key=${dedupKey})`);
         return res.status(200).json({
           success: true,
-          message: `Duplicate event ${eventId} ignored`,
+          message: `Duplicate message ${dedupKey} ignored`,
         });
       }
-      if (eventId) {
-        processedEvents.add(eventId);
-        setTimeout(() => processedEvents.delete(eventId), DEDUP_TTL_MS);
-      }
+      if (dedupKey) markProcessed(dedupKey);
+      // Also mark the envelope id to catch exact-same deliveries
+      if (eventId && eventId !== dedupKey) markProcessed(eventId);
 
       if (!senderPhone || !smsContent) {
         return res.status(400).json({
@@ -664,7 +678,7 @@ export function setupWebhookRoutes(app: express.Express): void {
         console.log(`[SMSGate] Reply to ${senderPhone}: "${replyText}"`);
 
         // Send reply back via SMSGate API
-        const sendResult = await sendSmsViaSmsGate(senderPhone, replyText);
+        const sendResult = await sendSmsViaSmsGate(senderPhone, replyText, simNumber);
 
         // If the user's SMS contained a password, send a follow-up security warning
         if (containedPassword) {
@@ -672,7 +686,7 @@ export function setupWebhookRoutes(app: express.Express): void {
           // Small delay so the warning arrives as a separate message after the main reply
           setTimeout(async () => {
             try {
-              await sendSmsViaSmsGate(senderPhone, securityWarning);
+              await sendSmsViaSmsGate(senderPhone, securityWarning, simNumber);
               console.log(`[SMSGate] Security warning sent to ${senderPhone}`);
             } catch (err) {
               console.error('[SMSGate] Failed to send security warning:', err);

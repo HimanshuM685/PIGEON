@@ -64,7 +64,10 @@ SMSGATE_PASSWORD=your_password
 npm run dev
 ```
 
-That's it. The server starts on `http://localhost:3000` and the Telegram bot (if configured) starts polling automatically.
+That's it. The server starts on `http://localhost:7575` (configurable via the `PORT` variable in `.env`) and the Telegram bot (if configured) starts polling automatically.
+
+**Setting a Custom Port:**
+To use a custom port locally, add `PORT=8080` to your `.env` file. If deploying with Docker, you must also update the port mapping in `docker-compose.yml` to map your custom port correctly (e.g., change `"${PORT:-7575}:7575"` to `"${PORT:-7575}:${PORT:-7575}"`).
 
 ### 4. Deploy with Docker (production)
 
@@ -75,7 +78,7 @@ nano .env  # fill in your real secrets
 docker compose up -d --build
 ```
 
-The container compiles the Falcon CLI, transpiles TypeScript, and starts the server on port `3000` with automatic restarts. To view logs:
+The container compiles the Falcon CLI, transpiles TypeScript, and starts the server on port `7575` with automatic restarts. To view logs:
 
 ```bash
 docker compose logs -f

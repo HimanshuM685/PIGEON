@@ -14,16 +14,17 @@ import type { IntentResult, IntentType, IntentParams } from './intent';
 // Aligned with the Telegram bot patterns + SMS-specific variations
 
 // Send: "send 5 algo to +919...", "send 30 ALGO to ABC123... password mypass"
+// Also handles typos: trasfer, tranfer, snd
 const SEND_PATTERN =
-  /^(?:send|transfer)\s+(\d+(?:\.\d+)?)\s*(?:algo)?\s*(?:to)\s+(\S+)(?:\s+(?:password|pass|pw|pin)\s+(.+))?$/i;
+  /^(?:send|snd|transfer|trasfer|tranfer)\s+(\d+(?:\.\d+)?)\s*(?:algo)?\s*(?:to)\s+(\S+)(?:\s+(?:password|pass|pw|pin)\s+(.+))?$/i;
 
-// Balance
+// Balance (with common typos: balence, balanse, blance, etc.)
 const BALANCE_PATTERN =
-  /^(?:balance|get\s+balance|bal|check\s+balance|how\s+much)$/i;
+  /^(?:balan[cs]e|balence|blance|get\s+balan[cs]e|bal|check\s+balan[cs]e|how\s+much)$/i;
 
-// Address
+// Address (with common typos: adress, addres, adres, etc.)
 const ADDRESS_PATTERN =
-  /^(?:address|get\s+address|addr|my\s+address|show\s+address|show\s+my\s+address)$/i;
+  /^(?:a{1,2}d{1,2}res{1,2}|get\s+a{1,2}d{1,2}res{1,2}|addr|my\s+a{1,2}d{1,2}res{1,2}|show\s+(?:my\s+)?a{1,2}d{1,2}res{1,2})$/i;
 
 // Fund
 const FUND_PATTERN =
@@ -35,7 +36,7 @@ const TXN_PATTERN =
 
 // Create wallet / onboard (without mnemonic)
 const CREATE_WALLET_PATTERN =
-  /^(?:create\s+wallet|create\s+account|sign\s*up|onboard|register)(?:\s+(?:password|pass|pw|pin)\s+(.+))?$/i;
+  /^(?:create\s+wall?et|create\s+account|sign\s*up|onboard|register|new\s+wallet)(?:\s+(?:password|pass|pw|pin)\s+(.+))?$/i;
 
 // Import wallet (with mnemonic)
 const IMPORT_WALLET_PATTERN =

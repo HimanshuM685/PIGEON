@@ -4,7 +4,7 @@ services:
     container_name: pigeon-backend
     restart: unless-stopped
     ports:
-      - "${PORT:-3000}:3000"
+      - "${PORT:-7575}:7575"
     env_file:
       - .env
     environment:
