@@ -82,9 +82,9 @@ export function Footer() {
             </div>
 
             {/* Giant wordmark — clipped at top of letters */}
-            <div className="w-full flex flex-col items-center justify-start overflow-hidden h-[22vw] md:h-[18vw]">
+            <div className="w-full flex flex-col items-center justify-start overflow-hidden h-[18vw] md:h-[16vw]">
                 <h2
-                    className="font-display font-black text-[30vw] md:text-[23vw] leading-[0.75] tracking-[-0.02em] select-none pointer-events-none uppercase flex-shrink-0"
+                    className="font-display font-black text-[25vw] md:text-[23vw] leading-[0.75] tracking-[-0.02em] select-none pointer-events-none uppercase flex-shrink-0"
                     style={{ color: 'rgba(255,255,255,0.06)' }}
                 >
                     PIGEON

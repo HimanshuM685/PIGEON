@@ -10,10 +10,10 @@ export function Hero() {
 
     useEffect(() => {
         if (!heroRef.current) return;
-        
+
         const tl = gsap.timeline({ defaults: { ease: 'power4.out' } });
-        tl.fromTo('.hero-text-anim', 
-            { y: '100%', opacity: 0, rotate: 5 }, 
+        tl.fromTo('.hero-text-anim',
+            { y: '100%', opacity: 0, rotate: 5 },
             { y: '0%', opacity: 1, rotate: 0, duration: 1.2, stagger: 0.1 }
         );
 
@@ -44,32 +44,32 @@ export function Hero() {
             className="relative min-h-screen flex items-end px-6 sm:px-8 pb-12 pt-32 overflow-hidden bg-vibrant-yellow"
         >
             {/* Massive Background Text Watermark */}
-            <div className="absolute top-[40%] md:top-1/2 left-0 -translate-y-1/2 w-full overflow-hidden pointer-events-none opacity-10 md:opacity-20 select-none flex will-change-transform transform-gpu">
-                <span className="hero-bg-text font-display text-[20vw] md:text-[25vw] leading-[0.8] tracking-tighter whitespace-nowrap text-dark-ink will-change-transform transform-gpu">
+            <div className="absolute top-[35%] md:top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full overflow-hidden pointer-events-none opacity-10 md:opacity-20 select-none flex justify-center will-change-transform transform-gpu">
+                <span className="hero-bg-text font-display text-[18vw] md:text-[25vw] leading-[0.8] tracking-tighter whitespace-nowrap text-dark-ink will-change-transform transform-gpu">
                     PIGEON
                 </span>
             </div>
 
-            <div className="relative z-10 w-full flex flex-col md:flex-row justify-between items-end gap-16 md:gap-12">
-                
+            <div className="relative z-10 w-full flex flex-col md:flex-row justify-between items-center md:items-end gap-16 md:gap-12">
+
                 {/* Massive Headline */}
                 <div className="flex-1">
                     <h1 className="font-display flex flex-col uppercase tracking-tighter w-full text-center md:text-left">
                         <div className="overflow-hidden">
-                            <span className="hero-text-anim block text-massive text-dark-ink will-change-transform transform-gpu">SEND</span>
+                            <span className="hero-text-anim block max-md:text-[18vw] max-md:leading-[0.9] text-massive text-dark-ink will-change-transform transform-gpu">SEND</span>
                         </div>
                         <div className="overflow-hidden">
-                            <span className="hero-text-anim block text-massive text-dark-ink will-change-transform transform-gpu md:ml-[10vw]">CRYPTO</span>
+                            <span className="hero-text-anim block max-md:text-[18vw] max-md:leading-[0.9] text-massive text-dark-ink will-change-transform transform-gpu md:ml-[10vw]">CRYPTO</span>
                         </div>
                         <div className="overflow-hidden mt-2 md:mt-4">
-                            <span className="hero-text-anim block text-huge text-dark-ink/80 will-change-transform transform-gpu">VIA SMS.</span>
+                            <span className="hero-text-anim block max-md:text-[15vw] max-md:leading-[0.9] text-huge text-dark-ink/80 will-change-transform transform-gpu">VIA SMS.</span>
                         </div>
                     </h1>
                 </div>
 
                 {/* Rough Glass CTA Box */}
-                <div 
-                    ref={glassRef} 
+                <div
+                    ref={glassRef}
                     className="w-full md:w-[400px] lg:w-[450px] flex-shrink-0 rough-glass p-8 md:p-10 flex flex-col gap-6"
                 >
                     <div className="inline-flex items-center gap-3">
