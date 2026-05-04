@@ -170,10 +170,10 @@ docker compose logs -f           # tail logs
 docker compose down              # stop
 ```
 
-The server listens on port `6969` (configurable via `PORT` in `.env`).
+The server listens on port `7575` (configurable via `PORT` in `.env`).
 
 **Setting a Custom Port:**
 - **Local (npm run dev):** Simply set `PORT=8080` in your `.env` file.
-- **Docker:** If you set a custom `PORT` in your `.env`, you need to modify `docker-compose.yml` to map to the new container port (e.g., `ports: ["${PORT:-6969}:${PORT:-6969}"]`).
+- **Docker:** If you set a custom `PORT` in your `.env`, you need to modify `docker-compose.yml` to map to the new container port (e.g., `ports: ["${PORT:-7575}:${PORT:-7575}"]`).
 Container restarts automatically on crash (`unless-stopped` policy).
 

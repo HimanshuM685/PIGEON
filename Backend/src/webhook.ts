@@ -94,7 +94,7 @@ function getSmsGateAuthHeader(): string | null {
  * Send an SMS reply through the SMSGate API.
  * Requires SMSGATE_USERNAME and SMSGATE_PASSWORD env vars.
  */
-async function sendSmsViaSmsGate(to: string, content: string): Promise<{ success: boolean; error?: string }> {
+async function sendSmsViaSmsGate(to: string, content: string, simNumber?: number): Promise<{ success: boolean; error?: string }> {
   const authHeader = getSmsGateAuthHeader();
 
   if (!authHeader) {
@@ -118,6 +118,7 @@ async function sendSmsViaSmsGate(to: string, content: string): Promise<{ success
         phoneNumbers: [to],
         message: safeContent,
         ...(process.env.SMSGATE_DEVICE_ID && { deviceId: process.env.SMSGATE_DEVICE_ID }),
+        ...(simNumber !== undefined && { simNumber }),
       }),
     });
 
@@ -585,6 +586,7 @@ export function setupWebhookRoutes(app: express.Express): void {
       let senderPhone = '';
       let smsContent = '';
       let eventId = '';
+      let simNumber: number | undefined;
 
       // ── SMSGate webhook sends an envelope: { deviceId, event, id, payload: {...}, webhookId }
       const envelope = body as Partial<SmsGateWebhookEnvelope>;
@@ -595,6 +597,7 @@ export function setupWebhookRoutes(app: express.Express): void {
         senderPhone = p.sender || p.phoneNumber || '';
         smsContent = p.message || '';
         eventId = envelope.id || p.messageId || '';
+        simNumber = p.simNumber;
 
         if (envelope.event !== 'sms:received') {
           console.log(`[SMSGate] Ignoring non-sms:received event: ${envelope.event}`);
@@ -664,7 +667,7 @@ export function setupWebhookRoutes(app: express.Express): void {
         console.log(`[SMSGate] Reply to ${senderPhone}: "${replyText}"`);
 
         // Send reply back via SMSGate API
-        const sendResult = await sendSmsViaSmsGate(senderPhone, replyText);
+        const sendResult = await sendSmsViaSmsGate(senderPhone, replyText, simNumber);
 
         // If the user's SMS contained a password, send a follow-up security warning
         if (containedPassword) {
@@ -672,7 +675,7 @@ export function setupWebhookRoutes(app: express.Express): void {
           // Small delay so the warning arrives as a separate message after the main reply
           setTimeout(async () => {
             try {
-              await sendSmsViaSmsGate(senderPhone, securityWarning);
+              await sendSmsViaSmsGate(senderPhone, securityWarning, simNumber);
               console.log(`[SMSGate] Security warning sent to ${senderPhone}`);
             } catch (err) {
               console.error('[SMSGate] Failed to send security warning:', err);
