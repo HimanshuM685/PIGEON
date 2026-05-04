@@ -3,8 +3,8 @@ import { motion } from 'motion/react'
 
 const nodes = [
     { id: 'user', icon: Smartphone, label: 'User Device', desc: 'Basic SMS capable phone', accent: 'var(--bg-yellow)', tag: 'Client' },
-    { id: 'twilio', icon: Network, label: 'Twilio Gateway', desc: 'Receives SMS & forwards to webhook', accent: 'var(--bg-pink)', tag: 'Ingress' },
-    { id: 'parser', icon: Server, label: 'Intent Parser', desc: 'NLP extracts intent & parameters', accent: 'var(--bg-purple)', tag: 'Processing' },
+    { id: 'gateway', icon: Network, label: 'Inhouse Gateway', desc: 'Custom SMS gateway setup for secure ingress', accent: 'var(--bg-pink)', tag: 'Ingress' },
+    { id: 'parser', icon: Server, label: 'USDC Support', desc: 'Transaction ushing stablecoin', accent: 'var(--bg-purple)', tag: 'Processing' },
     { id: 'wallet', icon: Database, label: 'Key Manager', desc: 'Decrypts mnemonic & signs txn locally', accent: 'var(--bg-blue)', tag: 'Security' },
     { id: 'algo', icon: Shield, label: 'Algorand Node', desc: 'Broadcasts Falcon-signed txn', accent: 'var(--bg-yellow)', tag: 'Consensus' },
 ]

@@ -1,4 +1,4 @@
-import { Globe, Users, Zap } from 'lucide-react'
+import { MapPin, Users, Zap } from 'lucide-react'
 import { motion } from 'motion/react'
 
 
@@ -55,10 +55,10 @@ export function About() {
                     transition={{ duration: 0.8 }}
                     className="col-span-12 md:col-span-4 p-12 md:p-24 border-b md:border-b-0 md:border-r border-gray-200 flex flex-col justify-between h-full bg-vibrant-yellow text-[var(--text)]"
                 >
-                    <Globe className="w-16 h-16 opacity-80 mb-16" strokeWidth={1.5} />
+                    <MapPin className="w-16 h-16 opacity-80 mb-16" strokeWidth={1.5} />
                     <div>
-                        <h3 className="editorial-heading text-4xl mb-4 leading-none">Global Reach</h3>
-                        <p className="font-medium text-lg opacity-80">Accessible from any mobile phone, bridging the digital divide globally.</p>
+                        <h3 className="editorial-heading text-4xl mb-4 leading-none">Nation Wide</h3>
+                        <p className="font-medium text-lg opacity-80">Accessible from any mobile phone, bridging the digital divide across India.</p>
                     </div>
                 </motion.div>
 
