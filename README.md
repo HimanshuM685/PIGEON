@@ -64,7 +64,10 @@ SMSGATE_PASSWORD=your_password
 npm run dev
 ```
 
-That's it. The server starts on `http://localhost:3000` and the Telegram bot (if configured) starts polling automatically.
+That's it. The server starts on `http://localhost:3000` (configurable via the `PORT` variable in `.env`) and the Telegram bot (if configured) starts polling automatically.
+
+**Setting a Custom Port:**
+To use a custom port locally, add `PORT=8080` to your `.env` file. If deploying with Docker, you must also update the port mapping in `docker-compose.yml` to map your custom port correctly (e.g., change `"${PORT:-3000}:3000"` to `"${PORT:-3000}:${PORT:-3000}"`).
 
 ### 4. Deploy with Docker (production)
 
