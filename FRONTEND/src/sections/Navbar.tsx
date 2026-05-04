@@ -31,15 +31,13 @@ export function Navbar() {
     }
 
     return (
-        <nav
-            className={cn(
-                'fixed top-6 left-1/2 -translate-x-1/2 z-50 transition-all duration-500 w-[95%] max-w-7xl rounded-full',
+        <nav className="fixed top-6 left-1/2 -translate-x-1/2 z-50 w-[95%] max-w-7xl">
+            <div className={cn(
+                "flex items-center justify-between transition-all duration-500 rounded-full",
                 scrolled
                     ? 'rough-glass py-3 px-6'
                     : 'bg-transparent py-4 px-6'
-            )}
-        >
-            <div className="flex items-center justify-between">
+            )}>
                 {/* Logo */}
                 <a
                     href="#home"
